@@ -1,0 +1,826 @@
+package com.mealos.ui
+
+/*
+THESIS: MealOS is an unfolded mise-en-place station, refusing the permanent dashboard rail and generic recipe-card grid.
+OWN-WORLD: Deep green enamel surrounds warm cream prep trays; yellow marks active time and burnt orange marks decisive completion.
+STORY: Plan familiar meals, consolidate the shop, then cook with the active step, ingredients, and timers held in equal view.
+FIRST VIEWPORT: A hidden drawer preserves width; the cooking surface balances a current-step tray against ingredients and a tactile timer shelf across the hinge.
+FORM: Mise en Place Board, first-ranked grounded direction, seed e36aa34b; approved comp 3 with previous-step preview and no bespoke recipe drawings.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+*/
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.window.layout.FoldingFeature
+import com.mealos.MealOsViewModel
+import com.mealos.data.GroceryAggregator
+import com.mealos.data.RecipeCatalog
+import com.mealos.model.CookingTimer
+import com.mealos.model.GroceryItem
+import com.mealos.model.Ingredient
+import com.mealos.model.IngredientCategory
+import com.mealos.model.MealOsUserState
+import com.mealos.model.PlanEntry
+import com.mealos.model.PortionMode
+import com.mealos.model.Recipe
+import com.mealos.model.scaledAmount
+import com.mealos.ui.theme.ActionOrange
+import com.mealos.ui.theme.Cream
+import com.mealos.ui.theme.Enamel
+import com.mealos.ui.theme.RaisedEnamel
+import com.mealos.ui.theme.TimerYellow
+import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
+
+private enum class Destination(val label: String, val icon: ImageVector) {
+    TODAY("Today", Icons.Default.Home),
+    PLAN("Plan", Icons.Default.CalendarMonth),
+    RECIPES("Recipes", Icons.Default.MenuBook),
+    GROCERY("Grocery", Icons.Default.ShoppingCart),
+    PANTRY("Pantry staples", Icons.Default.Inventory2)
+}
+
+private sealed interface Route {
+    data class Main(val destination: Destination) : Route
+    data class Detail(val recipeId: String) : Route
+    data class Cooking(val recipeId: String, val portion: PortionMode) : Route
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
+    val userState by viewModel.userState.collectAsStateWithLifecycle()
+    val timers by viewModel.timers.collectAsStateWithLifecycle()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
+
+    BackHandler(route !is Route.Main || (route as? Route.Main)?.destination != Destination.TODAY) {
+        route = Route.Main(Destination.TODAY)
+    }
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(modifier = Modifier.width(312.dp)) {
+                Text(
+                    "MealOS",
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.padding(start = 24.dp, top = 36.dp, bottom = 24.dp)
+                )
+                Destination.entries.forEach { destination ->
+                    val selected = (route as? Route.Main)?.destination == destination
+                    NavigationDrawerItem(
+                        label = { Text(destination.label) },
+                        icon = { Icon(destination.icon, contentDescription = null) },
+                        selected = selected,
+                        onClick = {
+                            route = Route.Main(destination)
+                            scope.launch { drawerState.close() }
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "Local-first · no account",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(24.dp)
+                )
+            }
+        }
+    ) {
+        AnimatedContent(
+            targetState = route,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "MealOS destination"
+        ) { currentRoute ->
+            when (currentRoute) {
+                is Route.Main -> MainDestination(
+                    destination = currentRoute.destination,
+                    state = userState,
+                    viewModel = viewModel,
+                    onMenu = { scope.launch { drawerState.open() } },
+                    onRecipe = { route = Route.Detail(it) },
+                    onCook = { id, portion -> route = Route.Cooking(id, portion) }
+                )
+                is Route.Detail -> RecipeDetail(
+                    recipe = RecipeCatalog.recipe(currentRoute.recipeId) ?: RecipeCatalog.recipes.first(),
+                    state = userState,
+                    viewModel = viewModel,
+                    onBack = { route = Route.Main(Destination.RECIPES) },
+                    onMenu = { scope.launch { drawerState.open() } },
+                    onCook = { portion -> route = Route.Cooking(currentRoute.recipeId, portion) }
+                )
+                is Route.Cooking -> CookingMode(
+                    recipe = RecipeCatalog.recipe(currentRoute.recipeId) ?: RecipeCatalog.recipes.first(),
+                    portion = currentRoute.portion,
+                    timers = timers.values.toList(),
+                    viewModel = viewModel,
+                    fold = fold,
+                    onBack = { route = Route.Detail(currentRoute.recipeId) },
+                    onMenu = { scope.launch { drawerState.open() } }
+                )
+            }
+        }
+    }
+}
+
+private val RouteSaver = androidx.compose.runtime.saveable.Saver<Route, String>(
+    save = { route ->
+        when (route) {
+            is Route.Main -> "main:${route.destination.name}"
+            is Route.Detail -> "detail:${route.recipeId}"
+            is Route.Cooking -> "cooking:${route.recipeId}:${route.portion.name}"
+        }
+    },
+    restore = { raw ->
+        val parts = raw.split(":")
+        when (parts.firstOrNull()) {
+            "detail" -> Route.Detail(parts.getOrElse(1) { RecipeCatalog.recipes.first().id })
+            "cooking" -> Route.Cooking(parts.getOrElse(1) { RecipeCatalog.recipes.first().id }, runCatching { PortionMode.valueOf(parts[2]) }.getOrDefault(PortionMode.TWO))
+            else -> Route.Main(runCatching { Destination.valueOf(parts.getOrElse(1) { Destination.TODAY.name }) }.getOrDefault(Destination.TODAY))
+        }
+    }
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MainDestination(
+    destination: Destination,
+    state: MealOsUserState,
+    viewModel: MealOsViewModel,
+    onMenu: () -> Unit,
+    onRecipe: (String) -> Unit,
+    onCook: (String, PortionMode) -> Unit
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = { Text(if (destination == Destination.TODAY) "MealOS" else destination.label) },
+                navigationIcon = { IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") } },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                )
+            )
+        }
+    ) { padding ->
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            modifier = Modifier.padding(padding).fillMaxSize()
+        ) {
+            when (destination) {
+                Destination.TODAY -> TodayScreen(state, onRecipe, onCook)
+                Destination.PLAN -> PlannerScreen(state, viewModel, onRecipe)
+                Destination.RECIPES -> RecipeLibrary(state, viewModel, onRecipe)
+                Destination.GROCERY -> GroceryScreen(state, viewModel)
+                Destination.PANTRY -> PantryScreen(state, viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayScreen(
+    state: MealOsUserState,
+    onRecipe: (String) -> Unit,
+    onCook: (String, PortionMode) -> Unit
+) {
+    val planned = state.plan.sortedBy { it.dayIndex }
+    val tonight = planned.firstOrNull()?.let { entry -> RecipeCatalog.recipe(entry.recipeId)?.let { it to entry } }
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        item {
+            Text("Your kitchen, ready.", style = MaterialTheme.typography.displayMedium, color = Enamel)
+            Text("Plan once. Shop once. Cook without hunting for the next step.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            if (tonight == null) {
+                EmptyTray("Nothing planned yet", "Open Plan and add a familiar dinner to your week.")
+            } else {
+                val (recipe, entry) = tonight
+                Card(colors = CardDefaults.cardColors(containerColor = Enamel, contentColor = Cream), shape = RoundedCornerShape(28.dp)) {
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Tonight", style = MaterialTheme.typography.titleMedium, color = TimerYellow)
+                        Text(recipe.shortName, style = MaterialTheme.typography.headlineLarge)
+                        Text(entry.portionMode.label, style = MaterialTheme.typography.bodyLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(onClick = { onCook(recipe.id, entry.portionMode) }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = ActionOrange)) {
+                                Icon(Icons.Default.Restaurant, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Start cooking")
+                            }
+                            OutlinedButton(onClick = { onRecipe(recipe.id) }) { Text("Review recipe") }
+                        }
+                    }
+                }
+            }
+        }
+        item { Text("This week", style = MaterialTheme.typography.headlineMedium) }
+        if (planned.isEmpty()) item { Text("Your week is open. Add meals from Plan.") }
+        items(planned) { entry ->
+            RecipeCatalog.recipe(entry.recipeId)?.let { recipe ->
+                ListItem(
+                    headlineContent = { Text(recipe.shortName, fontWeight = FontWeight.SemiBold) },
+                    supportingContent = { Text("${dayLabel(entry.dayIndex)} · ${entry.portionMode.label}") },
+                    leadingContent = { IngredientMark(recipe) },
+                    trailingContent = { Icon(Icons.Default.ArrowForward, contentDescription = null) },
+                    modifier = Modifier.clip(RoundedCornerShape(18.dp)).clickable { onRecipe(recipe.id) }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PlannerScreen(state: MealOsUserState, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
+    var editingDay by remember { mutableStateOf<Int?>(null) }
+    val planByDay = state.plan.associateBy { it.dayIndex }
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Build the week", style = MaterialTheme.typography.displayMedium)
+            Text("Choose familiar dinners; quantities roll directly into Grocery.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        items(7) { day ->
+            val entry = planByDay[day]
+            val recipe = entry?.let { RecipeCatalog.recipe(it.recipeId) }
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = if (day == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(dayLabel(day), style = MaterialTheme.typography.titleMedium)
+                            Text(recipe?.shortName ?: "Open night", style = MaterialTheme.typography.titleLarge)
+                        }
+                        if (entry != null) IconButton(onClick = { viewModel.removePlan(day) }) { Icon(Icons.Default.DeleteOutline, contentDescription = "Remove ${recipe?.shortName}") }
+                    }
+                    if (entry != null) {
+                        PortionSelector(entry.portionMode) { viewModel.setPlan(entry.copy(portionMode = it)) }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FilledTonalButton(onClick = { editingDay = day }) { Text(if (entry == null) "Add meal" else "Swap meal") }
+                        if (recipe != null) TextButton(onClick = { onRecipe(recipe.id) }) { Text("Recipe") }
+                    }
+                }
+            }
+        }
+        if (state.plan.isNotEmpty()) item { TextButton(onClick = viewModel::clearPlan) { Text("Clear the week") } }
+    }
+    editingDay?.let { day ->
+        androidx.compose.material3.ModalBottomSheet(onDismissRequest = { editingDay = null }) {
+            Text("Choose ${dayLabel(day)}", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
+            LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
+                items(RecipeCatalog.recipes) { recipe ->
+                    ListItem(
+                        headlineContent = { Text(recipe.shortName, fontWeight = FontWeight.SemiBold) },
+                        supportingContent = { Text("${recipe.effortMinutes} min hands-on · ${recipe.equipment.joinToString()}") },
+                        leadingContent = { IngredientMark(recipe) },
+                        modifier = Modifier.clickable {
+                            viewModel.setPlan(PlanEntry(day, recipe.id, PortionMode.TWO))
+                            editingDay = null
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecipeLibrary(state: MealOsUserState, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var favoritesOnly by rememberSaveable { mutableStateOf(false) }
+    val filtered = RecipeCatalog.recipes.filter { recipe ->
+        (!favoritesOnly || recipe.id in state.favorites) && (query.isBlank() || recipe.name.contains(query, true) || recipe.tags.any { it.contains(query, true) })
+    }
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("The core rotation", style = MaterialTheme.typography.displayMedium)
+            Text("Fifteen low-effort meals built around the equipment you actually use.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                placeholder = { Text("Search meals or equipment") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AssistChip(
+                    onClick = { favoritesOnly = !favoritesOnly },
+                    label = { Text(if (favoritesOnly) "Favorites only" else "All favorites") },
+                    leadingIcon = { Icon(if (favoritesOnly) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = null) }
+                )
+            }
+        }
+        items(filtered) { recipe ->
+            RecipeRow(recipe, recipe.id in state.favorites, state.ratings[recipe.id], { viewModel.toggleFavorite(recipe.id) }, { onRecipe(recipe.id) })
+        }
+        if (filtered.isEmpty()) item { EmptyTray("No meals found", "Try a shorter search or turn off the favorites filter.") }
+    }
+}
+
+@Composable
+private fun RecipeRow(recipe: Recipe, favorite: Boolean, rating: Int?, onFavorite: () -> Unit, onOpen: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)
+    ) {
+        Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            IngredientMark(recipe)
+            Column(Modifier.padding(horizontal = 14.dp).weight(1f)) {
+                Text(recipe.shortName, style = MaterialTheme.typography.titleLarge)
+                Text("${recipe.effortMinutes} min hands-on · ${recipe.totalMinutes} min total", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(recipe.equipment.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                if (rating != null) Text("$rating / 5", color = ActionOrange, fontWeight = FontWeight.SemiBold)
+            }
+            IconButton(onClick = onFavorite) {
+                Icon(if (favorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (favorite) "Remove favorite" else "Add favorite", tint = if (favorite) ActionOrange else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroceryScreen(state: MealOsUserState, viewModel: MealOsViewModel) {
+    val groceries = GroceryAggregator.aggregate(state.plan, RecipeCatalog.recipes, state.pantry)
+    val grouped = groceries.groupBy { it.category }
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
+            Text("One clean shop", style = MaterialTheme.typography.displayMedium)
+            Text("Combined from ${state.plan.size} planned meals. Pantry staples are already excluded.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (groceries.isEmpty()) item { EmptyTray("Your list is empty", "Add meals in Plan, or review Pantry staples if something is missing.") }
+        grouped.forEach { (category, items) ->
+            item { Text(category.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 18.dp)) }
+            items(items) { item -> GroceryRow(item, item.id in state.checkedGroceries) { viewModel.toggleGrocery(item.id) } }
+        }
+    }
+}
+
+@Composable
+private fun GroceryRow(item: GroceryItem, checked: Boolean, onToggle: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(item.name, fontWeight = FontWeight.SemiBold, textDecoration = if (checked) TextDecoration.LineThrough else null) },
+        supportingContent = { Text(item.displayAmount) },
+        leadingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle() }) },
+        modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onToggle)
+    )
+}
+
+@Composable
+private fun PantryScreen(state: MealOsUserState, viewModel: MealOsViewModel) {
+    val ingredients = RecipeCatalog.recipes.flatMap { it.ingredients }.distinctBy { it.id }.sortedWith(compareBy<Ingredient> { it.category.ordinal }.thenBy { it.name })
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        item {
+            Text("Pantry staples", style = MaterialTheme.typography.displayMedium)
+            Text("Anything switched on stays out of Grocery until you switch it off.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        items(ingredients) { ingredient ->
+            ListItem(
+                headlineContent = { Text(ingredient.name) },
+                supportingContent = { Text(ingredient.category.label) },
+                leadingContent = { CategoryIcon(ingredient.category) },
+                trailingContent = { Switch(checked = ingredient.id in state.pantry, onCheckedChange = { viewModel.togglePantry(ingredient.id) }) }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun RecipeDetail(
+    recipe: Recipe,
+    state: MealOsUserState,
+    viewModel: MealOsViewModel,
+    onBack: () -> Unit,
+    onMenu: () -> Unit,
+    onCook: (PortionMode) -> Unit
+) {
+    var portion by rememberSaveable { mutableStateOf(PortionMode.TWO) }
+    var note by rememberSaveable(recipe.id) { mutableStateOf(state.notes[recipe.id].orEmpty()) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(recipe.shortName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
+                actions = {
+                    IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") }
+                    IconButton(onClick = { viewModel.toggleFavorite(recipe.id) }) { Icon(if (recipe.id in state.favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Toggle favorite") }
+                }
+            )
+        },
+        bottomBar = {
+            Surface(tonalElevation = 4.dp) {
+                Button(
+                    onClick = { onCook(portion) },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = ActionOrange),
+                    modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp).height(56.dp)
+                ) { Text("Start cooking") }
+            }
+        }
+    ) { padding ->
+        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 10.dp, bottom = padding.calculateBottomPadding() + 18.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            item {
+                Text(recipe.name, style = MaterialTheme.typography.displayMedium)
+                Text("${recipe.effortMinutes} min hands-on · ${recipe.totalMinutes} min total", style = MaterialTheme.typography.bodyLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { recipe.tags.forEach { AssistChip(onClick = {}, label = { Text(it) }) } }
+            }
+            item {
+                Text("How much?", style = MaterialTheme.typography.headlineMedium)
+                PortionSelector(portion) { portion = it }
+            }
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer), shape = RoundedCornerShape(22.dp)) {
+                    Row(Modifier.padding(18.dp), verticalAlignment = Alignment.Top) {
+                        Icon(Icons.Default.Inventory2, contentDescription = null)
+                        Column(Modifier.padding(start = 12.dp)) {
+                            Text("Leftovers built in", fontWeight = FontWeight.Bold)
+                            Text(recipe.leftoverNote)
+                        }
+                    }
+                }
+            }
+            item { Text("Ingredients", style = MaterialTheme.typography.headlineMedium) }
+            items(recipe.ingredients) { ingredient ->
+                ListItem(
+                    headlineContent = { Text(ingredient.name) },
+                    supportingContent = { if (ingredient.id in state.pantry) Text("In pantry", color = MaterialTheme.colorScheme.primary) },
+                    leadingContent = { CategoryIcon(ingredient.category) },
+                    trailingContent = { Text(scaledAmount(ingredient, recipe, portion), fontWeight = FontWeight.SemiBold) }
+                )
+            }
+            item { Text("Steps", style = MaterialTheme.typography.headlineMedium) }
+            itemsIndexed(recipe.steps) { index, step ->
+                ListItem(
+                    headlineContent = { Text(step.title, fontWeight = FontWeight.SemiBold) },
+                    supportingContent = { Text(step.instruction) },
+                    leadingContent = { StepNumber(index + 1) },
+                    trailingContent = { step.timerSeconds?.let { Text("${it / 60} min") } }
+                )
+            }
+            item {
+                Text("Your rating", style = MaterialTheme.typography.headlineMedium)
+                Row { (1..5).forEach { rating -> IconButton(onClick = { viewModel.setRating(recipe.id, rating) }) { Icon(if ((state.ratings[recipe.id] ?: 0) >= rating) Icons.Default.Star else Icons.Default.StarBorder, contentDescription = "$rating stars", tint = TimerYellow) } } }
+            }
+            item {
+                Text("Notes", style = MaterialTheme.typography.headlineMedium)
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it },
+                    minLines = 3,
+                    placeholder = { Text("What should future-you remember?") },
+                    keyboardActions = KeyboardActions(onDone = { viewModel.setNote(recipe.id, note) }),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextButton(onClick = { viewModel.setNote(recipe.id, note) }) { Text("Save note") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CookingMode(
+    recipe: Recipe,
+    portion: PortionMode,
+    timers: List<CookingTimer>,
+    viewModel: MealOsViewModel,
+    fold: FoldingFeature?,
+    onBack: () -> Unit,
+    onMenu: () -> Unit
+) {
+    var stepIndex by rememberSaveable(recipe.id) { mutableIntStateOf(0) }
+    val step = recipe.steps[stepIndex]
+    val density = LocalDensity.current
+    val hingeWidth = with(density) { if (fold?.isSeparating == true) fold.bounds.width().toDp().coerceAtLeast(8.dp) else 8.dp }
+    BoxWithConstraints(Modifier.fillMaxSize().background(Enamel).safeDrawingPadding()) {
+        val expanded = maxWidth >= 720.dp
+        if (expanded) {
+            Row(Modifier.fillMaxSize()) {
+                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(step.title, seconds) }, Modifier.weight(1f))
+                Spacer(Modifier.width(hingeWidth).fillMaxHeight().background(Color(0xFF41573B)))
+                WorkspacePane(recipe, portion, timers, viewModel, Modifier.weight(1f))
+            }
+        } else {
+            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
+                item { StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(step.title, seconds) }, Modifier.fillMaxWidth()) }
+                item { WorkspacePane(recipe, portion, timers, viewModel, Modifier.fillMaxWidth()) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepPane(
+    recipe: Recipe,
+    portion: PortionMode,
+    stepIndex: Int,
+    onStep: (Int) -> Unit,
+    onBack: () -> Unit,
+    onMenu: () -> Unit,
+    onAddTimer: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val current = recipe.steps[stepIndex]
+    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation", tint = Cream) }
+            Column(Modifier.weight(1f)) {
+                Text(recipe.shortName, style = MaterialTheme.typography.titleLarge, color = Cream, maxLines = 2)
+                Text(portion.label, color = TimerYellow)
+            }
+            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Exit cooking mode", tint = Cream) }
+        }
+        RecipeProgress(stepIndex, recipe.steps.size)
+        Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("Step ${stepIndex + 1} of ${recipe.steps.size}", style = MaterialTheme.typography.titleMedium)
+                Text(current.title, style = MaterialTheme.typography.displayMedium)
+                Text(current.instruction, style = MaterialTheme.typography.bodyLarge)
+                AssistChip(onClick = {}, label = { Text(current.equipment) }, leadingIcon = { Icon(Icons.Default.Kitchen, contentDescription = null) })
+                current.tip?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold) }
+                current.timerSeconds?.let { seconds ->
+                    FilledTonalButton(onClick = { onAddTimer(seconds) }) {
+                        Icon(Icons.Default.AccessTime, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add ${seconds / 60} min timer")
+                    }
+                }
+            }
+        }
+        if (stepIndex > 0) StepPreview("Previous", recipe.steps[stepIndex - 1].title, Icons.Default.ArrowBack) { onStep(stepIndex - 1) }
+        recipe.steps.getOrNull(stepIndex + 1)?.let { StepPreview("Next · Step ${stepIndex + 2}", it.title, Icons.Default.ArrowForward) { onStep(stepIndex + 1) } }
+        recipe.steps.getOrNull(stepIndex + 2)?.let { StepPreview("Then · Step ${stepIndex + 3}", it.title, Icons.Default.ArrowForward) { onStep(stepIndex + 2) } }
+        Button(
+            onClick = { if (stepIndex < recipe.steps.lastIndex) onStep(stepIndex + 1) },
+            enabled = stepIndex < recipe.steps.lastIndex,
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = ActionOrange),
+            modifier = Modifier.fillMaxWidth().height(60.dp)
+        ) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(if (stepIndex == recipe.steps.lastIndex) "Recipe complete" else "Done · next step")
+        }
+    }
+}
+
+@Composable
+private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<CookingTimer>, viewModel: MealOsViewModel, modifier: Modifier = Modifier) {
+    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(vertical = 12.dp)) {
+                Text("Ingredients", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+                recipe.ingredients.take(6).forEach { ingredient ->
+                    ListItem(
+                        headlineContent = { Text(ingredient.name, fontWeight = FontWeight.SemiBold) },
+                        leadingContent = { CategoryIcon(ingredient.category) },
+                        trailingContent = { Text(scaledAmount(ingredient, recipe, portion)) },
+                        colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Cream)
+                    )
+                }
+            }
+        }
+        TimerShelf(timers, viewModel)
+    }
+}
+
+@Composable
+private fun TimerShelf(timers: List<CookingTimer>, viewModel: MealOsViewModel) {
+    Surface(color = RaisedEnamel, contentColor = Cream, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Timers", style = MaterialTheme.typography.headlineMedium)
+            if (timers.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AccessTime, contentDescription = null, tint = TimerYellow)
+                    Text(" Add a timer from a cooking step.", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            timers.take(2).forEachIndexed { index, timer ->
+                TimerControl(timer, if (index == 0) TimerYellow else Color(0xFFFF7A32), { viewModel.toggleTimer(timer.id) }, { viewModel.addMinute(timer.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimerControl(timer: CookingTimer, accent: Color, onToggle: () -> Unit, onAddMinute: () -> Unit) {
+    val totalSeconds = (timer.remainingMs / 1_000).coerceAtLeast(0)
+    val text = "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Enamel).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(timer.label, style = MaterialTheme.typography.titleMedium, color = accent)
+            Text(text, fontSize = 40.sp, fontWeight = FontWeight.Bold, color = accent, modifier = Modifier.semantics { contentDescription = "${timer.label} timer $text" })
+        }
+        IconButton(onClick = onToggle, modifier = Modifier.size(56.dp).background(RaisedEnamel, CircleShape)) { Icon(if (timer.running) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = if (timer.running) "Pause ${timer.label}" else "Start ${timer.label}") }
+        IconButton(onClick = onAddMinute, modifier = Modifier.size(56.dp).background(RaisedEnamel, CircleShape)) { Icon(Icons.Default.Add, contentDescription = "Add one minute to ${timer.label}") }
+    }
+}
+
+@Composable
+private fun RecipeProgress(stepIndex: Int, count: Int) {
+    Canvas(Modifier.fillMaxWidth().height(18.dp).semantics { contentDescription = "Step ${stepIndex + 1} of $count" }) {
+        val y = size.height / 2
+        drawLine(color = Color(0xFF6F8477), start = androidx.compose.ui.geometry.Offset(0f, y), end = androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 3.dp.toPx())
+        repeat(count) { index ->
+            val x = if (count == 1) 0f else size.width * index / (count - 1)
+            drawCircle(color = if (index <= stepIndex) TimerYellow else Color(0xFF6F8477), radius = if (index == stepIndex) 7.dp.toPx() else 4.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
+        }
+    }
+}
+
+@Composable
+private fun StepPreview(label: String, title: String, icon: ImageVector, onClick: () -> Unit) {
+    Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.labelLarge, color = ActionOrange)
+                Text(title, style = MaterialTheme.typography.titleMedium)
+            }
+            Icon(icon, contentDescription = null)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PortionSelector(selected: PortionMode, onSelect: (PortionMode) -> Unit) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        PortionMode.entries.forEach { mode ->
+            AssistChip(
+                onClick = { onSelect(mode) },
+                label = { Text(mode.label) },
+                leadingIcon = { Icon(if (selected == mode) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, contentDescription = null) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun IngredientMark(recipe: Recipe) {
+    val category = recipe.ingredients.firstOrNull()?.category ?: IngredientCategory.PANTRY
+    Surface(color = Enamel, contentColor = Cream, shape = CircleShape, modifier = Modifier.size(52.dp)) {
+        Box(contentAlignment = Alignment.Center) { CategoryIcon(category, tint = TimerYellow) }
+    }
+}
+
+@Composable
+private fun CategoryIcon(category: IngredientCategory, tint: Color = MaterialTheme.colorScheme.primary) {
+    val icon = when (category) {
+        IngredientCategory.PRODUCE -> Icons.Default.Restaurant
+        IngredientCategory.MEAT -> Icons.Default.Restaurant
+        IngredientCategory.DAIRY -> Icons.Default.Kitchen
+        IngredientCategory.BAKERY -> Icons.Default.Restaurant
+        IngredientCategory.PANTRY -> Icons.Default.Inventory2
+        IngredientCategory.FROZEN -> Icons.Default.Kitchen
+    }
+    Icon(icon, contentDescription = category.label, tint = tint)
+}
+
+@Composable
+private fun StepNumber(number: Int) {
+    Surface(color = Enamel, contentColor = Cream, shape = CircleShape, modifier = Modifier.size(40.dp)) {
+        Box(contentAlignment = Alignment.Center) { Text(number.toString(), fontWeight = FontWeight.Bold) }
+    }
+}
+
+@Composable
+private fun EmptyTray(title: String, body: String) {
+    Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(body, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+private fun dayLabel(dayIndex: Int): String {
+    val day = LocalDate.now().plusDays(dayIndex.toLong())
+    return if (dayIndex == 0) "Today · ${day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
+    else day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+}
