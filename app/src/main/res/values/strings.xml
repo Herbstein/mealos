@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MealOS</string>
+    <string name="timer_channel_name">Cooking timers</string>
+    <string name="timer_channel_description">Alerts when a MealOS cooking timer finishes</string>
+</resources>

@@ -1,0 +1,132 @@
+{
+  "title": "Choose MealOS’s visual world",
+  "question": "Choose the world that should make MealOS feel at home on your Fold8 Ultra, or re-roll the hand.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Butcher-Paper Prep Map",
+      "kicker": "THE ROLL",
+      "lineage": "butcher paper prep plans and grease-pencil kitchen marks",
+      "thesis": "One continuous working sheet turns a week of meals into a clear prep map.",
+      "palette": ["#F1E6CF", "#26221E", "#C4452D", "#496A58", "#46647A"],
+      "materials": ["warm butcher paper", "grease pencil", "masking-tape tabs", "brushed-steel seam"],
+      "viewport": "An unfolded working sheet divided evenly at the hinge: a large active step at left, measured ingredients and live timers at right, with the week traced along the top edge.",
+      "risk": "Can feel rustic if the typography and controls are not unmistakably modern Android.",
+      "raised": [
+        {"from": "Nixie Counter", "raise": "Timer states become unmistakable, high-contrast events instead of quiet metadata."},
+        {"from": "Type Specimen", "raise": "Hierarchy relies on disciplined scale before decoration."},
+        {"from": "Cloud Quarry", "raise": "The paper world fully occupies the screen rather than appearing as a card theme."},
+        {"from": "Orizuru Sequence", "raise": "Fold and unfold preserve one continuous cooking state."},
+        {"from": "Busytown Cutaway", "raise": "Every active tool and ingredient receives an explicit label."}
+      ],
+      "comp": ".impeccable/mocks/decision/assigned.webp"
+    },
+    {
+      "id": "model-pick",
+      "label": "Mise en Place Board",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "a cook’s organized prep station before service",
+      "thesis": "Everything needed for the next action is visibly in its place.",
+      "palette": ["#F6F1E7", "#183C34", "#E36B3D", "#E1B94B", "#26302E"],
+      "materials": ["pale stone", "deep green enamel", "painted measurement marks", "soft silicone controls"],
+      "viewport": "Two equal work zones sit on one calm prep surface: the current step and progression at left, ingredients and two tactile timers at right, with compact destinations tucked into an adaptive rail.",
+      "risk": "This is the most immediately usable direction, but also the one most likely to become a familiar premium recipe app.",
+      "comp": ".impeccable/mocks/decision/model-pick.webp"
+    },
+    {
+      "id": "challenger-transit",
+      "label": "Kitchen Line Map",
+      "verdict": "competitive",
+      "lineage": "midnight enamel metropolitan transit diagrams",
+      "thesis": "Meals become routes: prep, cook, rest, and serve are stations on a legible line.",
+      "palette": ["#10243A", "#F4F0E6", "#E34B3F", "#E9B949", "#4E8D72"],
+      "materials": ["midnight enamel", "porcelain station ticks", "colored route inks"],
+      "viewport": "An equal two-pane cooking view uses a bold route line to connect the active step, appliance timer, and next action while ingredients remain a labeled station list.",
+      "case": "It makes progress and multi-timer dependencies unusually clear, while requiring more learning than the grounded kitchen worlds.",
+      "risk": "The route metaphor could add cognitive load during a simple recipe if every screen performs it.",
+      "comp": ".impeccable/mocks/decision/challenger-transit.webp",
+      "hero": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/wayfinding-cartography-signage-midnight-transit-diagram.webp"
+    },
+    {
+      "id": "challenger-nixie",
+      "label": "Nixie Kitchen Counter",
+      "verdict": "declined",
+      "lineage": "nixie-tube laboratory counters",
+      "thesis": "Cooking time becomes the physical center of the interface.",
+      "palette": ["#151617", "#F47A32", "#AEB8BA", "#F2EEE4"],
+      "materials": ["blackened steel", "clear glass", "orange plasma glow"],
+      "viewport": "Large glass timers anchor the cooking view while steps and ingredients sit on engraved instrument panels.",
+      "case": "The timer story is superb, but weekly planning and grocery work do not naturally belong to the instrument panel.",
+      "kept": "Timer states become unmistakable, high-contrast events.",
+      "risk": "Dark laboratory hardware can feel clinical and visually heavy in a kitchen.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-nixie-laboratory-counter-hero.webp"
+    },
+    {
+      "id": "challenger-origami",
+      "label": "Continuous Fold",
+      "verdict": "declined",
+      "lineage": "a numbered orizuru folding sequence",
+      "thesis": "One unbroken surface carries the recipe through every device posture.",
+      "palette": ["#F7F1E3", "#D84632", "#231F1B", "#C9A34A"],
+      "materials": ["fibrous washi", "crease-white lines", "sumi ink"],
+      "viewport": "An equal two-pane sheet meets at a deliberate crease, with steps advancing like numbered folds.",
+      "case": "The continuity is relevant, but a literal fold metaphor competes with the food and is culturally disconnected from the meal rotation.",
+      "kept": "Fold and unfold preserve one continuous cooking state.",
+      "risk": "The visual metaphor risks becoming the subject instead of the meal.",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-orizuru-crane-sequence-hero.webp"
+    },
+    {
+      "id": "challenger-type",
+      "label": "Measured Type Specimen",
+      "verdict": "declined",
+      "lineage": "interactive variable-font specimens",
+      "thesis": "Scale alone separates what to do now from everything supporting it.",
+      "palette": ["#F7F6F2", "#151515", "#D45135"],
+      "materials": ["uncoated paper", "dense black ink", "hairline measurement rules"],
+      "viewport": "One enormous instruction balances a strict ingredient column and precise timer readouts.",
+      "case": "The hierarchy is excellent, but the system does not naturally express meal identity, shopping categories, or warmth.",
+      "kept": "Hierarchy relies on disciplined scale before decoration.",
+      "risk": "Could feel editorial and austere rather than useful in a busy kitchen."
+    },
+    {
+      "id": "challenger-cloud",
+      "label": "Cloud Quarry",
+      "verdict": "declined",
+      "lineage": "a surreal quarry of cut weather blocks",
+      "thesis": "Meals assemble from visible blocks that transform from raw to ready.",
+      "palette": ["#F3F0E8", "#63A7D8", "#555F68", "#BFC5C8"],
+      "materials": ["cumulus mass", "cut blue voids", "silver tool lines"],
+      "viewport": "Large ingredient blocks cross a central seam as the current recipe is assembled.",
+      "case": "The transformation story is memorable, but it obscures familiar food and demands imagery the utility does not need.",
+      "kept": "The chosen material world fully occupies the screen.",
+      "risk": "Visual spectacle would outrank speed and clarity."
+    },
+    {
+      "id": "challenger-busytown",
+      "label": "Kitchen Cutaway",
+      "verdict": "declined",
+      "lineage": "labeled busytown cross-section spreads",
+      "thesis": "Every appliance and ingredient is visible doing its job in one continuous kitchen.",
+      "palette": ["#FAF4E7", "#C84B3C", "#E4B23D", "#5C875C", "#6B4A35"],
+      "materials": ["gouache flats", "warm paper", "fine label pointers"],
+      "viewport": "The unfolded device becomes a labeled cutaway kitchen with the active recipe moving from tool to tool.",
+      "case": "It identifies every object clearly, but its playful illustrated scene conflicts with quick adult utility.",
+      "kept": "Every active tool and ingredient receives an explicit label.",
+      "risk": "Likely too playful for an everyday planning tool."
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "comp", "toggle": true},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A polished Material 3 meal planner with recipe photography, familiar cards, and standard navigation.",
+    "palette": ["#FFFFFF", "#1E2420", "#4F6F52", "#F3EEE6"],
+    "materials": ["clean surfaces", "rounded cards", "food photography"],
+    "viewport": "A conventional two-pane list-detail screen with recipe cards, a large food image, ingredients, and a floating start-cooking action.",
+    "risk": "Immediately familiar, but visually interchangeable with many existing recipe apps.",
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true
+}
