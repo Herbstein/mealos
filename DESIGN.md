@@ -246,7 +246,7 @@ The silhouette vocabulary is generous but not uniform. Large prep trays and time
 
 ### Step Preview
 
-A compact cream row with 18 dp corners and 12 × 16 dp padding. Its orange label identifies Previous, Next, or Then while the title remains deep enamel. Previous and upcoming steps are navigational previews and do not mutate timer state.
+A compact cream row with 18 dp corners and 12 × 16 dp padding. Its orange label identifies Previous, Next, or Then; the deep-enamel title is followed by up to two lines of supporting instruction text. When present, Previous sits immediately above the current-step tray so the cook can confirm context before acting. Upcoming previews follow the current step. These rows navigate without mutating timer state.
 
 ### Timer Control
 

@@ -9,6 +9,9 @@ FORM: Mise en Place Board, first-ranked grounded direction, seed e36aa34b; appro
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 */
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -16,6 +19,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -101,6 +105,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -113,7 +118,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -123,6 +130,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.view.WindowCompat
 import androidx.window.layout.FoldingFeature
 import com.mealos.MealOsViewModel
 import com.mealos.data.GroceryAggregator
@@ -162,6 +170,8 @@ private sealed interface Route {
     data class Cooking(val recipeId: String, val portion: PortionMode) : Route
 }
 
+private enum class CookingPane { STEP, WORKSPACE }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
@@ -170,6 +180,15 @@ fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
+    val view = LocalView.current
+    val darkTheme = isSystemInDarkTheme()
+
+    SideEffect {
+        view.context.findActivity()?.window?.let { window ->
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+                route is Route.Detail && !darkTheme
+        }
+    }
 
     BackHandler(route !is Route.Main || (route as? Route.Main)?.destination != Destination.TODAY) {
         route = when (val current = route) {
@@ -623,9 +642,49 @@ private fun CookingMode(
     val density = LocalDensity.current
     val stepScroll = rememberScrollState()
     val workspaceScroll = rememberScrollState()
+    val compactScroll = rememberScrollState()
+    var activePane by rememberSaveable { mutableStateOf(CookingPane.STEP) }
+    var compactStepHeightPx by rememberSaveable { mutableIntStateOf(0) }
+    var previousExpanded by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var pendingCompactRestore by remember { mutableStateOf(false) }
     val hingeWidth = with(density) { if (fold?.isSeparating == true) fold.bounds.width().toDp().coerceAtLeast(8.dp) else 8.dp }
     BoxWithConstraints(Modifier.fillMaxSize().background(Enamel).safeDrawingPadding()) {
         val expanded = maxWidth >= 720.dp
+
+        LaunchedEffect(stepScroll.isScrollInProgress) {
+            if (expanded && stepScroll.isScrollInProgress) activePane = CookingPane.STEP
+        }
+        LaunchedEffect(workspaceScroll.isScrollInProgress) {
+            if (expanded && workspaceScroll.isScrollInProgress) activePane = CookingPane.WORKSPACE
+        }
+        LaunchedEffect(expanded) {
+            val previous = previousExpanded
+            if (previous != null && previous != expanded) {
+                if (expanded) {
+                    if (compactScroll.value < compactStepHeightPx) {
+                        activePane = CookingPane.STEP
+                        stepScroll.scrollTo(compactScroll.value)
+                    } else {
+                        activePane = CookingPane.WORKSPACE
+                        workspaceScroll.scrollTo(compactScroll.value - compactStepHeightPx)
+                    }
+                } else {
+                    pendingCompactRestore = true
+                }
+            }
+            previousExpanded = expanded
+        }
+        LaunchedEffect(pendingCompactRestore, compactStepHeightPx) {
+            if (pendingCompactRestore && compactStepHeightPx > 0) {
+                val target = when (activePane) {
+                    CookingPane.STEP -> stepScroll.value
+                    CookingPane.WORKSPACE -> compactStepHeightPx + workspaceScroll.value
+                }
+                compactScroll.scrollTo(target)
+                pendingCompactRestore = false
+            }
+        }
+
         if (expanded) {
             Row(Modifier.fillMaxSize()) {
                 StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.weight(1f).verticalScroll(stepScroll))
@@ -633,8 +692,17 @@ private fun CookingMode(
                 WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.weight(1f).verticalScroll(workspaceScroll))
             }
         } else {
-            Column(Modifier.fillMaxSize().verticalScroll(stepScroll).padding(bottom = 20.dp)) {
-                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.fillMaxWidth())
+            Column(Modifier.fillMaxSize().verticalScroll(compactScroll).padding(bottom = 20.dp)) {
+                StepPane(
+                    recipe,
+                    portion,
+                    stepIndex,
+                    onStep = { stepIndex = it },
+                    onBack,
+                    onMenu,
+                    onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) },
+                    Modifier.fillMaxWidth().onSizeChanged { compactStepHeightPx = it.height }
+                )
                 WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.fillMaxWidth())
             }
         }
@@ -663,6 +731,10 @@ private fun StepPane(
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Exit cooking mode", tint = Cream) }
         }
         RecipeProgress(stepIndex, recipe.steps.size)
+        if (stepIndex > 0) {
+            val previous = recipe.steps[stepIndex - 1]
+            StepPreview("Previous", previous.title, previous.instruction, Icons.AutoMirrored.Filled.ArrowBack) { onStep(stepIndex - 1) }
+        }
         Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Step ${stepIndex + 1} of ${recipe.steps.size}", style = MaterialTheme.typography.titleMedium)
@@ -685,9 +757,8 @@ private fun StepPane(
                 }
             }
         }
-        if (stepIndex > 0) StepPreview("Previous", recipe.steps[stepIndex - 1].title, Icons.AutoMirrored.Filled.ArrowBack) { onStep(stepIndex - 1) }
-        recipe.steps.getOrNull(stepIndex + 1)?.let { StepPreview("Next · Step ${stepIndex + 2}", it.title, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 1) } }
-        recipe.steps.getOrNull(stepIndex + 2)?.let { StepPreview("Then · Step ${stepIndex + 3}", it.title, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 2) } }
+        recipe.steps.getOrNull(stepIndex + 1)?.let { StepPreview("Next · Step ${stepIndex + 2}", it.title, it.instruction, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 1) } }
+        recipe.steps.getOrNull(stepIndex + 2)?.let { StepPreview("Then · Step ${stepIndex + 3}", it.title, it.instruction, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 2) } }
         Button(
             onClick = { if (stepIndex < recipe.steps.lastIndex) onStep(stepIndex + 1) },
             enabled = stepIndex < recipe.steps.lastIndex,
@@ -795,12 +866,19 @@ private fun RecipeProgress(stepIndex: Int, count: Int) {
 }
 
 @Composable
-private fun StepPreview(label: String, title: String, icon: ImageVector, onClick: () -> Unit) {
+private fun StepPreview(label: String, title: String, description: String, icon: ImageVector, onClick: () -> Unit) {
     Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(label, style = MaterialTheme.typography.labelLarge, color = ActionOrange)
                 Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color(0xFF41573B),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             Icon(icon, contentDescription = null)
         }
@@ -878,3 +956,9 @@ private fun timerLabel(stepTitle: String): String = stepTitle
     .removePrefix("Start the ")
     .removePrefix("Cook the ")
     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}

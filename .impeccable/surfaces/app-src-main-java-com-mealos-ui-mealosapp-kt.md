@@ -18,7 +18,7 @@ related_targets: []
 - One home cook planning familiar meals, shopping once, and cooking with messy hands.
 - The active step, ingredients, and timers carry equal importance when unfolded.
 - Navigation stays hidden until the user opens a Material drawer, preserving horizontal workspace.
-- Cooking mode provides a compact previous-step preview plus next-step previews without changing timer state.
+- Cooking mode provides a compact previous-step preview immediately above the current step, plus next-step previews below it; every preview includes supporting instruction text and navigates without changing timer state.
 - The cover screen reflows to one pane; fold/unfold keeps scroll, timers, notes, and current step.
 - Android system Back, edge-to-edge insets, 48 dp targets, dark theme, large type, and screen-reader labels are mandatory.
 
@@ -31,7 +31,7 @@ Approved comp: `.impeccable/mocks/mise-en-place-3.webp`.
 Approved modifications:
 
 - Remove the permanently visible navigation rail; use a hidden Material navigation drawer.
-- Add a compact previous-step preview above the next-step previews.
+- Add a compact previous-step preview immediately above the current-step tray, and include concise instruction descriptions in previous and next previews.
 - Do not require bespoke recipe illustrations. Replace the tray drawing with reusable ingredient/equipment pictograms and code-native instruction content.
 
 ## Sampled visual system
@@ -55,8 +55,8 @@ Approved modifications:
 | Recipe identity header | Semantic Compose text and reusable ingredient icon | Name, portion mode, favorite state, and overflow actions. |
 | Overall progress rule | Compose Canvas/ProgressIndicator | Thin painted measurement rule with five discrete positions. |
 | Current-step tray | Semantic Compose | Largest cream field; step number, instruction, equipment note, and completion action. |
-| Previous-step preview | Semantic Compose | One compact expandable row labeled “Previous”; never steals focus. |
-| Next-step previews | Semantic Compose | Up to two compact rows with step numbers and forward affordances. |
+| Previous-step preview | Semantic Compose | One compact row labeled “Previous,” with title and instruction preview, immediately above the current step. |
+| Next-step previews | Semantic Compose | Up to two compact rows with step numbers, instruction previews, and forward affordances. |
 | Ingredient tray | LazyColumn | Normalized ingredient name, scaled quantity, pantry/check state, and reusable pictogram. |
 | Timer shelf | Compose state and foreground notification integration | Two simultaneous large timers with pause and +1 minute controls. |
 | Reusable pictograms | Material Symbols or simple code-native icons | Ingredient-category and equipment icons, not bespoke recipe drawings. |
