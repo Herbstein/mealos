@@ -23,3 +23,30 @@ test("chat returns a stateless agent response", () => withServer(async base => {
   assert.equal(response.status, 200);
   assert.equal((await response.json()).reply, "Ready");
 }));
+
+test("limits concurrent agent work", async () => {
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const server = createMealOsServer({
+    token: "test-secret",
+    runAgent: async () => { await gate; return { reply: "Ready", questions: [], sources: [], recipeDocument: null }; }
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const options = {
+    method: "POST",
+    headers: { authorization: "Bearer test-secret", "content-type": "application/json" },
+    body: JSON.stringify({ messages: [{ role: "user", content: "Make dinner" }] })
+  };
+  try {
+    const first = fetch(`${base}/v1/recipe-chat`, options);
+    const second = fetch(`${base}/v1/recipe-chat`, options);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    assert.equal((await fetch(`${base}/v1/recipe-chat`, options)).status, 429);
+    release();
+    assert.deepEqual((await Promise.all([first, second])).map(response => response.status), [200, 200]);
+  } finally {
+    release();
+    await new Promise(resolve => server.close(resolve));
+  }
+});

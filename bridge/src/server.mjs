@@ -6,6 +6,8 @@ import { MAX_REQUEST_BYTES, validateRequest } from "./protocol.mjs";
 
 export function createMealOsServer({ token = process.env.MEALOS_BRIDGE_TOKEN, runAgent = runRecipeAgent } = {}) {
   if (!token) throw new Error("MEALOS_BRIDGE_TOKEN is required.");
+  let activeRequests = 0;
+  let recentRequests = [];
   return createServer(async (request, response) => {
     response.setHeader("Cache-Control", "no-store");
     response.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -13,6 +15,14 @@ export function createMealOsServer({ token = process.env.MEALOS_BRIDGE_TOKEN, ru
     if (request.method === "GET" && request.url === "/health") return send(response, 200, { ok: true });
     if (request.method !== "POST" || request.url !== "/v1/recipe-chat") return send(response, 404, { error: "Not found." });
     if (!authorized(request.headers.authorization, token)) return send(response, 401, { error: "Unauthorized." });
+    const now = Date.now();
+    recentRequests = recentRequests.filter(timestamp => now - timestamp < 60_000);
+    if (recentRequests.length >= 20 || activeRequests >= 2) {
+      response.setHeader("Retry-After", "30");
+      return send(response, 429, { error: "Recipe Assistant is busy. Try again shortly." });
+    }
+    recentRequests.push(now);
+    activeRequests += 1;
 
     try {
       const body = await readJson(request);
@@ -31,8 +41,10 @@ export function createMealOsServer({ token = process.env.MEALOS_BRIDGE_TOKEN, ru
       }
     } catch (error) {
       const status = error?.statusCode || 500;
-      if (status >= 500) console.error(error);
+      if (status >= 500) console.error("Recipe agent failed", { name: error?.name, code: error?.code });
       return send(response, status, { error: status >= 500 ? "Recipe assistant is temporarily unavailable." : error.message });
+    } finally {
+      activeRequests -= 1;
     }
   });
 }
