@@ -158,7 +158,8 @@
       "Do keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language.",
       "Do keep the Recipe Assistant's enamel conversation and cream proof colors fixed across themes, and preserve the equal-pane split at 720 dp and above.",
       "Do keep assistant verification factual: distinguish unresolved questions, attached scans, and checked sources, and keep the composer above navigation and IME insets.",
-      "Do keep the Assistant model selector compact in the trailing top bar, with a short family name and selection details inside the native menu."
+      "Do keep the Assistant model selector compact in the trailing top bar, with a short family name and selection details inside the native menu.",
+      "Do keep cloud sign-in optional in the drawer shelf, with explicit connecting, syncing, synced, offline, and recovery states."
     ],
     "donts": [
       "Don't turn the interface into a generic dashboard or uniform card grid.",

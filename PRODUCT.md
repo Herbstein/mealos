@@ -39,8 +39,8 @@ MealOS treats the foldable device as a kitchen work surface: the cover screen is
 - Weekly meal planner and consolidated grocery list grouped by store category.
 - Pantry staples can be excluded from shopping.
 - Leftovers are explicit in planning and recipe guidance.
-- Favorites, ratings, and personal notes are stored locally.
-- Offline-first behavior; no account or server is required for the MVP.
+- Favorites, ratings, and personal notes are stored locally and optionally synchronized through the owner's Firebase account.
+- Offline-first behavior remains primary; planning, shopping, recipes, and cooking require no account or network. Google sign-in adds cloud recovery and device sync.
 - The recipe model remains simple and data-driven so new recipes can be added without redesigning the app.
 - Personal recipes can be created and edited locally with a fold-aware guided editor; core recipes are customized as personal copies, and unsaved work is protected by an explicit discard confirmation.
 - MealOS recipe documents use an explicit versioned JSON schema and can enter the app through Android Share or file open, always as a clearly identified, reviewable draft.
@@ -48,7 +48,8 @@ MealOS treats the foldable device as a kitchen work surface: the cover screen is
 - Recipe Assistant conversations, scan text, cited sources, and the current recipe draft live locally on the device. The Railway service receives recent context per request and stores no sessions or recipe data.
 - Printed pages and gallery images enter through the ML Kit document scanner. OCR runs on-device; only extracted text is included in an assistant request.
 - Generated recipes never save directly. They open in the existing editor as unsaved imported drafts with validation and discard protection.
-- The private APK is configured with a dedicated MealOS gateway token. The Claude subscription credential remains only in Railway and is never included in the app.
+- Recipe Assistant requests use short-lived Firebase identity tokens. Railway verifies the token and permits only the configured owner UID; no permanent gateway credential is included in the APK.
+- Firestore synchronizes personal recipes, plans, pantry state, favorites, ratings, notes, and grocery checkmarks beneath the signed-in Firebase UID. Timers and assistant conversations remain device-local.
 - Avoid seafood and mushrooms. Pork should not be a core ingredient.
 
 ## Brand Commitments

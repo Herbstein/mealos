@@ -1,6 +1,6 @@
 # Recipe Assistant setup
 
-MealOS 0.5 adds a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway.
+MealOS includes a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway authenticated with the owner's Firebase identity.
 
 ## Railway service
 
@@ -9,7 +9,8 @@ Create a Railway service from this repository and set its root directory to `bri
 Set these Railway variables:
 
 - `CLAUDE_CODE_OAUTH_TOKEN`: the Claude Code credential used by the Agent SDK.
-- `MEALOS_BRIDGE_TOKEN`: a separate, long random value used to authorize the private APK.
+- `FIREBASE_PROJECT_ID`: `mealos-af8fc`.
+- `MEALOS_ALLOWED_FIREBASE_UID`: the owner's UID shown in Firebase Console after the first successful sign-in.
 
 Set the health check path to `/health`. After deployment, verify that it returns `{ "ok": true }`. Do not expose Railway logs containing request bodies or either token.
 
@@ -19,12 +20,11 @@ The Assistant header offers Sonnet (default), Opus, and Haiku. The choice applie
 
 ## Android release
 
-Add two private GitHub Actions secrets before tagging 0.5.0:
+Add this private GitHub Actions secret before tagging 0.6.0:
 
 - `MEALOS_BRIDGE_URL`: the public Railway service URL, without `/v1/recipe-chat`.
-- `MEALOS_BRIDGE_TOKEN`: the same random gateway value configured in Railway.
 
-The values are compiled into the private APK. This is suitable for the current single-owner/private-distribution model, but an APK bearer token is recoverable by a determined party. If the APK or token leaks, rotate `MEALOS_BRIDGE_TOKEN` in Railway and publish a new APK. A future multi-user release should replace this with user authentication and short-lived tokens.
+The public Railway URL is compiled into the APK. MealOS retrieves a short-lived Firebase ID token after Google sign-in; Railway verifies its signature and accepts only `MEALOS_ALLOWED_FIREBASE_UID`. No reusable bridge credential is stored in the APK or GitHub Actions.
 
 `CLAUDE_CODE_OAUTH_TOKEN` must never be added to GitHub Actions or the APK. It belongs only in Railway.
 
