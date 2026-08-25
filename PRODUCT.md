@@ -42,8 +42,8 @@ MealOS treats the foldable device as a kitchen work surface: the cover screen is
 - Favorites, ratings, and personal notes are stored locally.
 - Offline-first behavior; no account or server is required for the MVP.
 - The recipe model remains simple and data-driven so new recipes can be added without redesigning the app.
-- Personal recipes can be created and edited locally with a fold-aware guided editor; core recipes are customized as personal copies.
-- MealOS recipe documents use an explicit versioned JSON schema and can enter the app through Android Share or file open, always as a reviewable draft.
+- Personal recipes can be created and edited locally with a fold-aware guided editor; core recipes are customized as personal copies, and unsaved work is protected by an explicit discard confirmation.
+- MealOS recipe documents use an explicit versioned JSON schema and can enter the app through Android Share or file open, always as a clearly identified, reviewable draft.
 - The Recipes screen provides a reusable ChatGPT prompt so AI-assisted creation does not require an API key or ongoing in-app AI cost.
 - Avoid seafood and mushrooms. Pork should not be a core ingredient.
 

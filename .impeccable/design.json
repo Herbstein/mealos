@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-24T20:34:05-04:00",
+  "generatedAt": "2026-08-25T00:01:00-04:00",
   "title": "Design System: MealOS",
   "extensions": {
     "colorMeta": {
@@ -49,7 +49,9 @@
       { "name": "destination-fade", "value": "fadeIn() togetherWith fadeOut()", "purpose": "Transition between app destinations without spatial disruption." }
     ],
     "breakpoints": [
-      { "name": "cooking-expanded", "value": "720dp" }
+      { "name": "cooking-expanded", "value": "720dp" },
+      { "name": "recipe-editor-expanded", "value": "720dp" },
+      { "name": "recipe-preview-split", "value": "600dp" }
     ]
   },
   "components": [
@@ -106,6 +108,13 @@
       "description": "The off-canvas Material destination list that preserves the cooking workspace.",
       "html": "<nav class=\"ds-drawer\"><h2>MealOS</h2><a class=\"ds-drawer-active\" href=\"#\">Today</a><a href=\"#\">Plan</a><a href=\"#\">Recipes</a><a href=\"#\">Grocery</a></nav>",
       "css": ".ds-drawer { width: 312px; min-height: 420px; box-sizing: border-box; background: #F3F0E8; color: #083224; padding: 24px 12px; } .ds-drawer h2 { margin: 12px; font: 600 38px/40px 'Barlow Condensed', system-ui, sans-serif; } .ds-drawer a { display: block; min-height: 48px; box-sizing: border-box; border-radius: 24px; color: #083224; padding: 14px 16px; text-decoration: none; font: 600 15px/20px system-ui, sans-serif; } .ds-drawer a:hover, .ds-drawer-active { background: #D1C3B0; } .ds-drawer a:focus-visible { outline: 3px solid #C9A442; outline-offset: 2px; }"
+    },
+    {
+      "name": "Recipe Authoring Bench",
+      "kind": "custom",
+      "description": "The expanded recipe editor: an enamel section outline, imported-draft notice, active cream work pane, and persistent decisive save action.",
+      "html": "<section class=\"ds-editor\"><aside class=\"ds-editor-outline\"><h2>Build the recipe</h2><p>Work through each tray, then check the cooking preview before saving.</p><button class=\"ds-editor-section ds-editor-active\">Basics <b>✓</b></button><button class=\"ds-editor-section\">Ingredients</button><div class=\"ds-editor-notice\">Imported as a draft. Review it before saving.</div></aside><main class=\"ds-editor-pane\"><h3>Name the meal</h3><label>Recipe name<input value=\"Weeknight chicken\"></label></main><footer><button>Save recipe</button></footer></section>",
+      "css": ".ds-editor { display: grid; grid-template-columns: 300px 8px minmax(300px, 1fr); grid-template-rows: 1fr auto; min-height: 430px; background: #41573B; color: #083224; font: 15px/22px system-ui, sans-serif; } .ds-editor-outline { grid-column: 1; background: #083224; color: #F3F0E8; padding: 20px; } .ds-editor-outline h2 { margin: 0 0 8px; font: 600 38px/40px 'Barlow Condensed', system-ui, sans-serif; } .ds-editor-outline p { margin: 0 0 16px; } .ds-editor-section { display: flex; justify-content: space-between; width: 100%; min-height: 52px; margin: 8px 0; border: 0; border-radius: 18px; background: #234633; color: #F3F0E8; padding: 14px 16px; font: 600 17px/23px system-ui, sans-serif; text-align: left; } .ds-editor-section:hover { background: #346A53; } .ds-editor-section:focus-visible { outline: 3px solid #C9A442; outline-offset: 2px; } .ds-editor-active { background: #F3F0E8; color: #083224; } .ds-editor-active b { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #C9A442; } .ds-editor-notice { margin-top: 16px; border-radius: 18px; background: rgba(201,164,66,.2); padding: 16px; } .ds-editor-pane { grid-column: 3; background: #F3F0E8; padding: 20px; } .ds-editor-pane h3 { margin: 0 0 18px; font: 600 32px/34px 'Barlow Condensed', system-ui, sans-serif; } .ds-editor-pane label { display: grid; gap: 6px; } .ds-editor-pane input { min-height: 52px; border: 1px solid #6F8477; border-radius: 4px; background: transparent; color: #083224; padding: 0 14px; font: 18px/26px system-ui, sans-serif; } .ds-editor-pane input:focus { outline: 3px solid #C9A442; outline-offset: 2px; } .ds-editor footer { grid-column: 1 / -1; background: #234633; padding: 16px; } .ds-editor footer button { width: 100%; height: 56px; border: 0; border-radius: 28px; background: #C84F13; color: #F3F0E8; font: 600 15px/20px system-ui, sans-serif; } .ds-editor footer button:hover { filter: brightness(1.06); } .ds-editor footer button:active { filter: brightness(.92); } .ds-editor footer button:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; }"
     }
   ],
   "narrative": {
@@ -129,13 +138,15 @@
       "Do keep yellow tied to timing/progress and orange tied to decisive action.",
       "Do reflow cooking mode from balanced panes to one column at the observed 720 dp threshold while preserving working state.",
       "Do keep primary touch controls generous, with circular timer controls at 56 dp and standard Material icon targets elsewhere.",
-      "Do use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation."
+      "Do use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation.",
+      "Do keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language."
     ],
     "donts": [
       "Don't turn the interface into a generic dashboard or uniform card grid.",
       "Don't use food-blog photography, bespoke recipe illustration, glass effects, or decorative shadow stacks as the system's identity.",
       "Don't add a permanently visible navigation rail; protect the unfolded cooking workspace with the hidden drawer.",
-      "Don't shrink instructions into label-sized type or let secondary controls compete with the current cooking action."
+      "Don't shrink instructions into label-sized type or let secondary controls compete with the current cooking action.",
+      "Don't let AI-created or externally shared recipes bypass the draft review and explicit save step."
     ]
   }
 }

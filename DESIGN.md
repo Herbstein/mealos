@@ -199,6 +199,8 @@ The base rhythm uses compact 6–12 dp gaps, 16–18 dp component insets, 20 dp 
 
 At widths of 720 dp and above, cooking mode becomes a balanced two-pane station: the current-step pane and the ingredient/timer workspace each take half the available width, with a divider matching the physical folding feature when present and never narrower than 8 dp. Below 720 dp, those zones reflow into a single vertical working column. Fold and unfold transitions must preserve the current step, timers, notes, and useful scroll context rather than restart the task.
 
+The recipe editor follows the same work-surface logic. At 720 dp and above, a 300 dp enamel outline holds Basics, Ingredients, Steps, and Preview beside the active cream form pane, separated by an 8 dp rule; below 720 dp, those sections become a wrapping chip row above one scrollable pane. The preview itself splits step and ingredient trays at 600 dp and stacks below that width. Save remains a full-width persistent action on every layout.
+
 Navigation remains a hidden Material drawer so the unfolded workspace is not consumed by a permanent rail. The drawer is 312 dp wide in the implementation and opens from the standard menu target. Edge-to-edge safe drawing and navigation-bar insets remain part of every screen composition.
 
 ## Elevation & Depth
@@ -238,11 +240,20 @@ The silhouette vocabulary is generous but not uniform. Large prep trays and time
 
 - **Style:** Material 3 outlined text fields for search and notes, inheriting the active color scheme rather than creating a separate form aesthetic.
 - **Use:** Search stays single-line; notes may expand to multiple lines.
+- **Editor use:** Group fields into named work trays rather than presenting one undifferentiated form. Ingredient and step rows use 22 dp tonal containers, with add, reorder, and remove controls kept adjacent to the item they affect.
 
 ### Navigation
 
 - **Style:** A hidden 312 dp Material navigation drawer with icon-and-label destinations and a selected state supplied by Material 3.
 - **Behavior:** The drawer closes after selection. System Back returns through cooking, detail, and primary destinations without trapping the user.
+
+### Recipe Authoring
+
+The recipe editor is a guided mise en place bench, not a spreadsheet. Basics, Ingredients, Steps, and Preview form a visible sequence with yellow completion marks and a cream selected state on expanded layouts; compact layouts use wrapping section chips with yellow for the active section. Imported recipes open directly in this editor with a persistent notice that they are drafts requiring review before saving.
+
+The bottom save shelf uses raised enamel and one full-width decisive-orange action. Closing the editor or using Android Back with unsaved changes opens a native confirmation dialog with “Keep editing” as the safe escape and “Discard” as the explicit destructive choice. Validation remains in-context inside the editor rather than moving the cook to a separate error screen.
+
+On the Recipes bench, “Create a recipe” remains the primary action. “Copy AI recipe prompt” is an outlined secondary entry with short helper text explaining the handoff: paste into ChatGPT, then share the returned JSON to MealOS for review. Copying confirms with lightweight native feedback; AI assistance never masquerades as automatic in-app generation.
 
 ### Step Preview
 
@@ -267,6 +278,7 @@ A thin 18 dp-high measurement track uses supporting sage for the line and inacti
 - **Do** reflow cooking mode from balanced panes to one column at the observed 720 dp threshold while preserving working state.
 - **Do** keep primary touch controls generous, with circular timer controls at 56 dp and standard Material icon targets elsewhere.
 - **Do** use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation.
+- **Do** keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language.
 
 ### Don't:
 
@@ -274,3 +286,4 @@ A thin 18 dp-high measurement track uses supporting sage for the line and inacti
 - **Don't** use food-blog photography, bespoke recipe illustration, glass effects, or decorative shadow stacks as the system's identity.
 - **Don't** add a permanently visible navigation rail; protect the unfolded cooking workspace with the hidden drawer.
 - **Don't** shrink instructions into label-sized type or let secondary controls compete with the current cooking action.
+- **Don't** let AI-created or externally shared recipes bypass the draft review and explicit save step.
