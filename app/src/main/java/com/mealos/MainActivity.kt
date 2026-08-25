@@ -35,7 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleRecipeIntent(intent)
+        if (savedInstanceState == null) handleRecipeIntent(intent)
         enableEdgeToEdge()
         setContent {
             val fold by produceState<FoldingFeature?>(initialValue = null) {
@@ -101,7 +101,13 @@ class MainActivity : ComponentActivity() {
         val content = sharedText ?: (intent.data ?: sharedFile ?: intent.clipData?.getItemAt(0)?.uri)?.let { uri ->
             runCatching { contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }.getOrNull()
         }
-        if (!content.isNullOrBlank()) viewModel.importRecipe(content)
+        if (!content.isNullOrBlank()) {
+            viewModel.importRecipe(content)
+            intent.action = Intent.ACTION_MAIN
+            intent.data = null
+            intent.clipData = null
+            intent.replaceExtras(Bundle())
+        }
     }
 
     @Suppress("DEPRECATION")

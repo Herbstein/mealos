@@ -59,7 +59,8 @@ data class Recipe(
 data class RecipeEditorState(
     val recipe: Recipe,
     val imported: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val hasUnsavedChanges: Boolean = false
 )
 
 data class PlanEntry(

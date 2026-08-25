@@ -90,7 +90,8 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         _editorState.value = if (recipe.origin == RecipeOrigin.CORE) {
             RecipeEditorState(
                 recipe.copy(id = UUID.randomUUID().toString(), origin = RecipeOrigin.MANUAL),
-                message = "This is a personal copy. The core recipe stays unchanged."
+                message = "This is a personal copy. The core recipe stays unchanged.",
+                hasUnsavedChanges = true
             )
         } else RecipeEditorState(recipe)
     }
@@ -101,7 +102,8 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
             _editorState.value = RecipeEditorState(
                 recipe = it,
                 imported = true,
-                message = "Imported as a draft. Review it before saving."
+                message = "Imported as a draft. Review it before saving.",
+                hasUnsavedChanges = true
             )
         }
         if (result.errors.isNotEmpty()) _importError.value = result.errors.joinToString("\n")
@@ -113,7 +115,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun updateEditorRecipe(transform: (Recipe) -> Recipe) {
-        _editorState.update { state -> state?.copy(recipe = transform(state.recipe), message = null) }
+        _editorState.update { state -> state?.copy(recipe = transform(state.recipe), message = null, hasUnsavedChanges = true) }
     }
 
     fun saveEditorRecipe(): List<String> {
@@ -121,7 +123,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         val errors = RecipeDocument.validate(state.recipe)
         if (errors.isNotEmpty()) return errors
         launch { repository.saveRecipe(state.recipe) }
-        _editorState.value = state.copy(message = "Saved to your recipe library.")
+        _editorState.value = state.copy(message = "Saved to your recipe library.", hasUnsavedChanges = false)
         return emptyList()
     }
 

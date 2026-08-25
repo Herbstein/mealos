@@ -199,6 +199,7 @@ fun MealOsApp(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
+    var showDiscardRecipeDialog by rememberSaveable { mutableStateOf(false) }
     val view = LocalView.current
     val darkTheme = isSystemInDarkTheme()
 
@@ -207,12 +208,28 @@ fun MealOsApp(
             onDismissRequest = viewModel::clearImportError,
             title = { Text("Recipe could not be imported") },
             text = { Text(message) },
-            confirmButton = { TextButton(onClick = viewModel::clearImportError) { Text("Review file") } }
+            confirmButton = { TextButton(onClick = viewModel::clearImportError) { Text("Dismiss") } }
         )
     }
 
-    LaunchedEffect(editorState?.recipe?.id) {
-        if (editorState != null) route = Route.Editor
+    if (showDiscardRecipeDialog) {
+        AlertDialog(
+            onDismissRequest = { showDiscardRecipeDialog = false },
+            title = { Text("Discard unsaved recipe?") },
+            text = { Text("Your changes have not been saved to the recipe library.") },
+            dismissButton = { TextButton(onClick = { showDiscardRecipeDialog = false }) { Text("Keep editing") } },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardRecipeDialog = false
+                    viewModel.closeEditor()
+                    route = Route.Main(Destination.RECIPES)
+                }) { Text("Discard") }
+            }
+        )
+    }
+
+    LaunchedEffect(editorState?.recipe?.id, editorState?.hasUnsavedChanges) {
+        if (editorState?.hasUnsavedChanges == true) route = Route.Editor
     }
 
     SideEffect {
@@ -227,8 +244,13 @@ fun MealOsApp(
             is Route.Cooking -> Route.Detail(current.recipeId)
             is Route.Detail -> Route.Main(Destination.RECIPES)
             Route.Editor -> {
-                viewModel.closeEditor()
-                Route.Main(Destination.RECIPES)
+                if (editorState?.hasUnsavedChanges == true) {
+                    showDiscardRecipeDialog = true
+                    Route.Editor
+                } else {
+                    viewModel.closeEditor()
+                    Route.Main(Destination.RECIPES)
+                }
             }
             is Route.Main -> Route.Main(Destination.TODAY)
         }
@@ -319,8 +341,12 @@ fun MealOsApp(
                         onRecipeChange = viewModel::updateEditorRecipe,
                         onSave = viewModel::saveEditorRecipe,
                         onClose = {
-                            viewModel.closeEditor()
-                            route = Route.Main(Destination.RECIPES)
+                            if (state.hasUnsavedChanges) {
+                                showDiscardRecipeDialog = true
+                            } else {
+                                viewModel.closeEditor()
+                                route = Route.Main(Destination.RECIPES)
+                            }
                         },
                         onSaved = { recipeId -> route = Route.Detail(recipeId) }
                     )
