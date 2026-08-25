@@ -36,7 +36,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -48,8 +47,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -62,7 +62,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -150,7 +149,7 @@ import java.util.Locale
 private enum class Destination(val label: String, val icon: ImageVector) {
     TODAY("Today", Icons.Default.Home),
     PLAN("Plan", Icons.Default.CalendarMonth),
-    RECIPES("Recipes", Icons.Default.MenuBook),
+    RECIPES("Recipes", Icons.AutoMirrored.Filled.MenuBook),
     GROCERY("Grocery", Icons.Default.ShoppingCart),
     PANTRY("Pantry staples", Icons.Default.Inventory2)
 }
@@ -343,7 +342,7 @@ private fun TodayScreen(
                     headlineContent = { Text(recipe.shortName, fontWeight = FontWeight.SemiBold) },
                     supportingContent = { Text("${dayLabel(entry.dayIndex)} · ${entry.portionMode.label}") },
                     leadingContent = { IngredientMark(recipe) },
-                    trailingContent = { Icon(Icons.Default.ArrowForward, contentDescription = null) },
+                    trailingContent = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) },
                     modifier = Modifier.clip(RoundedCornerShape(18.dp)).clickable { onRecipe(recipe.id) }
                 )
             }
@@ -525,7 +524,7 @@ private fun RecipeDetail(
         topBar = {
             TopAppBar(
                 title = { Text(recipe.shortName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
                 actions = {
                     IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") }
                     IconButton(onClick = { viewModel.toggleFavorite(recipe.id) }) { Icon(if (recipe.id in state.favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Toggle favorite") }
@@ -651,7 +650,7 @@ private fun StepPane(
                 Text(recipe.shortName, style = MaterialTheme.typography.titleLarge, color = Cream, maxLines = 2)
                 Text(portion.label, color = TimerYellow)
             }
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Exit cooking mode", tint = Cream) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Exit cooking mode", tint = Cream) }
         }
         RecipeProgress(stepIndex, recipe.steps.size)
         Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
@@ -670,9 +669,9 @@ private fun StepPane(
                 }
             }
         }
-        if (stepIndex > 0) StepPreview("Previous", recipe.steps[stepIndex - 1].title, Icons.Default.ArrowBack) { onStep(stepIndex - 1) }
-        recipe.steps.getOrNull(stepIndex + 1)?.let { StepPreview("Next · Step ${stepIndex + 2}", it.title, Icons.Default.ArrowForward) { onStep(stepIndex + 1) } }
-        recipe.steps.getOrNull(stepIndex + 2)?.let { StepPreview("Then · Step ${stepIndex + 3}", it.title, Icons.Default.ArrowForward) { onStep(stepIndex + 2) } }
+        if (stepIndex > 0) StepPreview("Previous", recipe.steps[stepIndex - 1].title, Icons.AutoMirrored.Filled.ArrowBack) { onStep(stepIndex - 1) }
+        recipe.steps.getOrNull(stepIndex + 1)?.let { StepPreview("Next · Step ${stepIndex + 2}", it.title, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 1) } }
+        recipe.steps.getOrNull(stepIndex + 2)?.let { StepPreview("Then · Step ${stepIndex + 3}", it.title, Icons.AutoMirrored.Filled.ArrowForward) { onStep(stepIndex + 2) } }
         Button(
             onClick = { if (stepIndex < recipe.steps.lastIndex) onStep(stepIndex + 1) },
             enabled = stepIndex < recipe.steps.lastIndex,
