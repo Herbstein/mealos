@@ -12,6 +12,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -59,6 +60,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
@@ -73,6 +75,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
@@ -121,10 +124,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -135,7 +141,8 @@ import androidx.core.view.WindowCompat
 import androidx.window.layout.FoldingFeature
 import com.mealos.MealOsViewModel
 import com.mealos.data.GroceryAggregator
-import com.mealos.data.RecipeCatalog
+import com.mealos.data.loadChatGptRecipePrompt
+import com.mealos.data.shareRecipe
 import com.mealos.model.CookingTimer
 import com.mealos.model.GroceryItem
 import com.mealos.model.Ingredient
@@ -169,6 +176,7 @@ private sealed interface Route {
     data class Main(val destination: Destination) : Route
     data class Detail(val recipeId: String) : Route
     data class Cooking(val recipeId: String, val portion: PortionMode) : Route
+    data object Editor : Route
 }
 
 private enum class CookingPane { STEP, WORKSPACE }
@@ -184,6 +192,9 @@ fun MealOsApp(
     onEnablePreciseTimers: () -> Unit
 ) {
     val userState by viewModel.userState.collectAsStateWithLifecycle()
+    val recipes by viewModel.recipes.collectAsStateWithLifecycle()
+    val editorState by viewModel.editorState.collectAsStateWithLifecycle()
+    val importError by viewModel.importError.collectAsStateWithLifecycle()
     val timers by viewModel.timers.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -191,10 +202,23 @@ fun MealOsApp(
     val view = LocalView.current
     val darkTheme = isSystemInDarkTheme()
 
+    importError?.let { message ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearImportError,
+            title = { Text("Recipe could not be imported") },
+            text = { Text(message) },
+            confirmButton = { TextButton(onClick = viewModel::clearImportError) { Text("Review file") } }
+        )
+    }
+
+    LaunchedEffect(editorState?.recipe?.id) {
+        if (editorState != null) route = Route.Editor
+    }
+
     SideEffect {
         view.context.findActivity()?.window?.let { window ->
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-                route is Route.Detail && !darkTheme
+                (route is Route.Detail || route is Route.Editor) && !darkTheme
         }
     }
 
@@ -202,6 +226,10 @@ fun MealOsApp(
         route = when (val current = route) {
             is Route.Cooking -> Route.Detail(current.recipeId)
             is Route.Detail -> Route.Main(Destination.RECIPES)
+            Route.Editor -> {
+                viewModel.closeEditor()
+                Route.Main(Destination.RECIPES)
+            }
             is Route.Main -> Route.Main(Destination.TODAY)
         }
     }
@@ -247,21 +275,32 @@ fun MealOsApp(
                 is Route.Main -> MainDestination(
                     destination = currentRoute.destination,
                     state = userState,
+                    recipes = recipes,
                     viewModel = viewModel,
                     onMenu = { scope.launch { drawerState.open() } },
                     onRecipe = { route = Route.Detail(it) },
-                    onCook = { id, portion -> route = Route.Cooking(id, portion) }
+                    onCook = { id, portion -> route = Route.Cooking(id, portion) },
+                    onNewRecipe = {
+                        viewModel.startNewRecipe()
+                        route = Route.Editor
+                    }
                 )
                 is Route.Detail -> RecipeDetail(
-                    recipe = RecipeCatalog.recipe(currentRoute.recipeId) ?: RecipeCatalog.recipes.first(),
+                    recipe = recipes.firstOrNull { it.id == currentRoute.recipeId }
+                        ?: editorState?.recipe
+                        ?: recipes.first(),
                     state = userState,
                     viewModel = viewModel,
                     onBack = { route = Route.Main(Destination.RECIPES) },
                     onMenu = { scope.launch { drawerState.open() } },
-                    onCook = { portion -> route = Route.Cooking(currentRoute.recipeId, portion) }
+                    onCook = { portion -> route = Route.Cooking(currentRoute.recipeId, portion) },
+                    onEdit = {
+                        viewModel.startEditingRecipe(currentRoute.recipeId)
+                        route = Route.Editor
+                    }
                 )
                 is Route.Cooking -> CookingMode(
-                    recipe = RecipeCatalog.recipe(currentRoute.recipeId) ?: RecipeCatalog.recipes.first(),
+                    recipe = recipes.firstOrNull { it.id == currentRoute.recipeId } ?: recipes.first(),
                     portion = currentRoute.portion,
                     timers = timers.values.toList(),
                     pantry = userState.pantry,
@@ -274,6 +313,18 @@ fun MealOsApp(
                     onBack = { route = Route.Detail(currentRoute.recipeId) },
                     onMenu = { scope.launch { drawerState.open() } }
                 )
+                Route.Editor -> editorState?.let { state ->
+                    RecipeEditorScreen(
+                        state = state,
+                        onRecipeChange = viewModel::updateEditorRecipe,
+                        onSave = viewModel::saveEditorRecipe,
+                        onClose = {
+                            viewModel.closeEditor()
+                            route = Route.Main(Destination.RECIPES)
+                        },
+                        onSaved = { recipeId -> route = Route.Detail(recipeId) }
+                    )
+                }
             }
         }
     }
@@ -285,13 +336,15 @@ private val RouteSaver = androidx.compose.runtime.saveable.Saver<Route, String>(
             is Route.Main -> "main:${route.destination.name}"
             is Route.Detail -> "detail:${route.recipeId}"
             is Route.Cooking -> "cooking:${route.recipeId}:${route.portion.name}"
+            Route.Editor -> "editor"
         }
     },
     restore = { raw ->
         val parts = raw.split(":")
         when (parts.firstOrNull()) {
-            "detail" -> Route.Detail(parts.getOrElse(1) { RecipeCatalog.recipes.first().id })
-            "cooking" -> Route.Cooking(parts.getOrElse(1) { RecipeCatalog.recipes.first().id }, runCatching { PortionMode.valueOf(parts[2]) }.getOrDefault(PortionMode.TWO))
+            "detail" -> Route.Detail(parts.getOrElse(1) { "garlic-herb-chicken" })
+            "cooking" -> Route.Cooking(parts.getOrElse(1) { "garlic-herb-chicken" }, runCatching { PortionMode.valueOf(parts[2]) }.getOrDefault(PortionMode.TWO))
+            "editor" -> Route.Editor
             else -> Route.Main(runCatching { Destination.valueOf(parts.getOrElse(1) { Destination.TODAY.name }) }.getOrDefault(Destination.TODAY))
         }
     }
@@ -302,10 +355,12 @@ private val RouteSaver = androidx.compose.runtime.saveable.Saver<Route, String>(
 private fun MainDestination(
     destination: Destination,
     state: MealOsUserState,
+    recipes: List<Recipe>,
     viewModel: MealOsViewModel,
     onMenu: () -> Unit,
     onRecipe: (String) -> Unit,
-    onCook: (String, PortionMode) -> Unit
+    onCook: (String, PortionMode) -> Unit,
+    onNewRecipe: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -327,11 +382,11 @@ private fun MainDestination(
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             when (destination) {
-                Destination.TODAY -> TodayScreen(state, onRecipe, onCook)
-                Destination.PLAN -> PlannerScreen(state, viewModel, onRecipe)
-                Destination.RECIPES -> RecipeLibrary(state, viewModel, onRecipe)
-                Destination.GROCERY -> GroceryScreen(state, viewModel)
-                Destination.PANTRY -> PantryScreen(state, viewModel)
+                Destination.TODAY -> TodayScreen(state, recipes, onRecipe, onCook)
+                Destination.PLAN -> PlannerScreen(state, recipes, viewModel, onRecipe)
+                Destination.RECIPES -> RecipeLibrary(state, recipes, viewModel, onRecipe, onNewRecipe)
+                Destination.GROCERY -> GroceryScreen(state, recipes, viewModel)
+                Destination.PANTRY -> PantryScreen(state, recipes, viewModel)
             }
         }
     }
@@ -340,11 +395,12 @@ private fun MainDestination(
 @Composable
 private fun TodayScreen(
     state: MealOsUserState,
+    recipes: List<Recipe>,
     onRecipe: (String) -> Unit,
     onCook: (String, PortionMode) -> Unit
 ) {
     val planned = state.plan.sortedBy { it.dayIndex }
-    val tonight = planned.firstOrNull()?.let { entry -> RecipeCatalog.recipe(entry.recipeId)?.let { it to entry } }
+    val tonight = planned.firstOrNull()?.let { entry -> recipes.firstOrNull { it.id == entry.recipeId }?.let { it to entry } }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Text("Your kitchen, ready.", style = MaterialTheme.typography.displayMedium, color = Enamel)
@@ -375,7 +431,7 @@ private fun TodayScreen(
         item { Text("This week", style = MaterialTheme.typography.headlineMedium) }
         if (planned.isEmpty()) item { Text("Your week is open. Add meals from Plan.") }
         items(planned) { entry ->
-            RecipeCatalog.recipe(entry.recipeId)?.let { recipe ->
+            recipes.firstOrNull { it.id == entry.recipeId }?.let { recipe ->
                 ListItem(
                     headlineContent = { Text(recipe.shortName, fontWeight = FontWeight.SemiBold) },
                     supportingContent = { Text("${dayLabel(entry.dayIndex)} · ${entry.portionMode.label}") },
@@ -390,7 +446,7 @@ private fun TodayScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlannerScreen(state: MealOsUserState, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
+private fun PlannerScreen(state: MealOsUserState, recipes: List<Recipe>, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
     var editingDay by remember { mutableStateOf<Int?>(null) }
     val planByDay = state.plan.associateBy { it.dayIndex }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -400,7 +456,7 @@ private fun PlannerScreen(state: MealOsUserState, viewModel: MealOsViewModel, on
         }
         items(7) { day ->
             val entry = planByDay[day]
-            val recipe = entry?.let { RecipeCatalog.recipe(it.recipeId) }
+            val recipe = entry?.let { planned -> recipes.firstOrNull { it.id == planned.recipeId } }
             Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = if (day == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -426,7 +482,7 @@ private fun PlannerScreen(state: MealOsUserState, viewModel: MealOsViewModel, on
         androidx.compose.material3.ModalBottomSheet(onDismissRequest = { editingDay = null }) {
             Text("Choose ${dayLabel(day)}", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
             LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-                items(RecipeCatalog.recipes) { recipe ->
+                items(recipes) { recipe ->
                     ListItem(
                         headlineContent = { Text(recipe.shortName, fontWeight = FontWeight.SemiBold) },
                         supportingContent = { Text("${recipe.effortMinutes} min hands-on · ${recipe.equipment.joinToString()}") },
@@ -444,16 +500,48 @@ private fun PlannerScreen(state: MealOsUserState, viewModel: MealOsViewModel, on
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RecipeLibrary(state: MealOsUserState, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
+private fun RecipeLibrary(
+    state: MealOsUserState,
+    recipes: List<Recipe>,
+    viewModel: MealOsViewModel,
+    onRecipe: (String) -> Unit,
+    onNewRecipe: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     var query by rememberSaveable { mutableStateOf("") }
     var favoritesOnly by rememberSaveable { mutableStateOf(false) }
-    val filtered = RecipeCatalog.recipes.filter { recipe ->
+    val filtered = recipes.filter { recipe ->
         (!favoritesOnly || recipe.id in state.favorites) && (query.isBlank() || recipe.name.contains(query, true) || recipe.tags.any { it.contains(query, true) })
     }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("The core rotation", style = MaterialTheme.typography.displayMedium)
-            Text("Fifteen low-effort meals built around the equipment you actually use.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Your recipe bench", style = MaterialTheme.typography.displayMedium)
+            Text("Core favorites and your own recipes, ready for planning and cooking.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onNewRecipe, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Create a recipe")
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    clipboard.setText(AnnotatedString(loadChatGptRecipePrompt(context)))
+                    Toast.makeText(context, "AI recipe prompt copied", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Copy AI recipe prompt")
+            }
+            Text(
+                "Paste it into ChatGPT, then share the JSON response back to MealOS for review.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp)
+            )
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = query,
@@ -501,8 +589,8 @@ private fun RecipeRow(recipe: Recipe, favorite: Boolean, rating: Int?, onFavorit
 }
 
 @Composable
-private fun GroceryScreen(state: MealOsUserState, viewModel: MealOsViewModel) {
-    val groceries = GroceryAggregator.aggregate(state.plan, RecipeCatalog.recipes, state.pantry)
+private fun GroceryScreen(state: MealOsUserState, recipes: List<Recipe>, viewModel: MealOsViewModel) {
+    val groceries = GroceryAggregator.aggregate(state.plan, recipes, state.pantry)
     val grouped = groceries.groupBy { it.category }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
@@ -528,8 +616,8 @@ private fun GroceryRow(item: GroceryItem, checked: Boolean, onToggle: () -> Unit
 }
 
 @Composable
-private fun PantryScreen(state: MealOsUserState, viewModel: MealOsViewModel) {
-    val ingredients = RecipeCatalog.recipes.flatMap { it.ingredients }.distinctBy { it.id }.sortedWith(compareBy<Ingredient> { it.category.ordinal }.thenBy { it.name })
+private fun PantryScreen(state: MealOsUserState, recipes: List<Recipe>, viewModel: MealOsViewModel) {
+    val ingredients = recipes.flatMap { it.ingredients }.distinctBy { it.id }.sortedWith(compareBy<Ingredient> { it.category.ordinal }.thenBy { it.name })
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item {
             Text("Pantry staples", style = MaterialTheme.typography.displayMedium)
@@ -554,8 +642,10 @@ private fun RecipeDetail(
     viewModel: MealOsViewModel,
     onBack: () -> Unit,
     onMenu: () -> Unit,
-    onCook: (PortionMode) -> Unit
+    onCook: (PortionMode) -> Unit,
+    onEdit: () -> Unit
 ) {
+    val context = LocalContext.current
     var portion by rememberSaveable { mutableStateOf(PortionMode.TWO) }
     var note by rememberSaveable(recipe.id) { mutableStateOf(state.notes[recipe.id].orEmpty()) }
     Scaffold(
@@ -564,6 +654,8 @@ private fun RecipeDetail(
                 title = { Text(recipe.shortName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
                 actions = {
+                    IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, contentDescription = "Edit or customize recipe") }
+                    IconButton(onClick = { shareRecipe(context, recipe) }) { Icon(Icons.Default.Share, contentDescription = "Share recipe file") }
                     IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") }
                     IconButton(onClick = { viewModel.toggleFavorite(recipe.id) }) { Icon(if (recipe.id in state.favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Toggle favorite") }
                 }
@@ -582,6 +674,9 @@ private fun RecipeDetail(
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = padding.calculateTopPadding() + 10.dp, bottom = padding.calculateBottomPadding() + 18.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             item {
                 Text(recipe.name, style = MaterialTheme.typography.displayMedium)
+                if (recipe.description.isNotBlank()) {
+                    Text(recipe.description, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Text("${recipe.effortMinutes} min hands-on · ${recipe.totalMinutes} min total", style = MaterialTheme.typography.bodyLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { recipe.tags.forEach { StaticChip(it) } }
             }

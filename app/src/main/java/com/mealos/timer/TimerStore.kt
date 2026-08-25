@@ -10,6 +10,7 @@ class TimerStore(context: Context) {
 
     fun load(): Map<String, CookingTimer> = decode(preferences.getString(TIMERS_KEY, null))
 
+    @Suppress("ApplySharedPref", "UseKtx")
     fun save(timers: Map<String, CookingTimer>) {
         preferences.edit().putString(TIMERS_KEY, encode(timers.values)).commit()
     }

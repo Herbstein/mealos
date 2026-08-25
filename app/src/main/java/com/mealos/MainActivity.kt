@@ -17,6 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import com.mealos.ui.MealOsApp
@@ -33,6 +35,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleRecipeIntent(intent)
         enableEdgeToEdge()
         setContent {
             val fold by produceState<FoldingFeature?>(initialValue = null) {
@@ -53,6 +56,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleRecipeIntent(intent)
+    }
+
     override fun onResume() {
         super.onResume()
         refreshTimerAccess()
@@ -70,7 +79,7 @@ class MainActivity : ComponentActivity() {
         val permissionHistory = getSharedPreferences("mealos_permissions", MODE_PRIVATE)
         val askedBefore = permissionHistory.getBoolean("notification_asked", false)
         if (runtimePermissionMissing && (!askedBefore || shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS))) {
-            permissionHistory.edit().putBoolean("notification_asked", true).apply()
+            permissionHistory.edit { putBoolean("notification_asked", true) }
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             startActivity(TimerNotifications.notificationSettingsIntent(this))
@@ -80,8 +89,25 @@ class MainActivity : ComponentActivity() {
     private fun enablePreciseTimers() {
         if (Build.VERSION.SDK_INT < 31) return
         val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-            data = Uri.parse("package:$packageName")
+            data = "package:$packageName".toUri()
         }
         startActivity(intent)
+    }
+
+    private fun handleRecipeIntent(intent: Intent?) {
+        if (intent == null || intent.action == Intent.ACTION_MAIN) return
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        val sharedFile = intent.sharedStreamUri()
+        val content = sharedText ?: (intent.data ?: sharedFile ?: intent.clipData?.getItemAt(0)?.uri)?.let { uri ->
+            runCatching { contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } }.getOrNull()
+        }
+        if (!content.isNullOrBlank()) viewModel.importRecipe(content)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun Intent.sharedStreamUri(): Uri? = if (Build.VERSION.SDK_INT >= 33) {
+        getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+    } else {
+        getParcelableExtra(Intent.EXTRA_STREAM)
     }
 }

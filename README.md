@@ -18,11 +18,11 @@ The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
 
 MealOS publishes private, signed APK releases from GitHub tags. The release signing key is held in GitHub Actions secrets and never committed.
 
-To publish an update:
+To publish an update (use the next semantic version):
 
 ```sh
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 The `Release MealOS` workflow tests the app, derives a monotonically increasing Android version code from the tag, builds the signed APK, and attaches it to the matching private GitHub Release.
@@ -40,6 +40,9 @@ The first signed release cannot update a debug-signed installation. Uninstall th
 - Adaptive cover and unfolded layouts with a drawer instead of a permanent sidebar
 - Equal-weight cooking panes when unfolded, including previous/next step previews
 - Native cooking timers and notifications
-- Recipes are structured Kotlin data in `RecipeCatalog.kt`, making the core rotation straightforward to extend
+- A fold-aware manual recipe editor with ingredients, steps, timers, equipment, leftovers, and cooking preview
+- Versioned `.mealosrecipe` files that can be shared to or opened with MealOS for review before saving
+- A built-in ChatGPT recipe prompt; copied recipes remain local and require no in-app AI subscription
+- Core recipes remain structured in `RecipeCatalog.kt`; personal and imported recipes persist locally through the same simple model
 
-See `PRODUCT.md` for product decisions and `DESIGN.md` for the visual system once generated.
+See `docs/CHATGPT_RECIPE_PROMPT.md` for the AI-assisted recipe flow, `PRODUCT.md` for product decisions, and `DESIGN.md` for the visual system.

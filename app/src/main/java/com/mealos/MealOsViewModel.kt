@@ -47,6 +47,8 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _editorState = MutableStateFlow<RecipeEditorState?>(null)
     val editorState = _editorState.asStateFlow()
+    private val _importError = MutableStateFlow<String?>(null)
+    val importError = _importError.asStateFlow()
 
     private val _timers = MutableStateFlow(timerStore.load())
     val timers = _timers.asStateFlow()
@@ -102,7 +104,12 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
                 message = "Imported as a draft. Review it before saving."
             )
         }
+        if (result.errors.isNotEmpty()) _importError.value = result.errors.joinToString("\n")
         return result
+    }
+
+    fun clearImportError() {
+        _importError.value = null
     }
 
     fun updateEditorRecipe(transform: (Recipe) -> Recipe) {

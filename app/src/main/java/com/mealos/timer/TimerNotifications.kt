@@ -100,7 +100,11 @@ object TimerNotifications {
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
             .build()
-        NotificationManagerCompat.from(context).notify(id.hashCode(), notification)
+        try {
+            NotificationManagerCompat.from(context).notify(id.hashCode(), notification)
+        } catch (_: SecurityException) {
+            // Permission can be revoked after canPostAlerts() returns. The app surfaces recovery on resume.
+        }
     }
 
     fun reschedulePersisted(context: Context) {
