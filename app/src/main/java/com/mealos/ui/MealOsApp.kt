@@ -235,7 +235,7 @@ fun MealOsApp(
     SideEffect {
         view.context.findActivity()?.window?.let { window ->
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-                (route is Route.Detail || route is Route.Editor) && !darkTheme
+                route is Route.Detail && !darkTheme
         }
     }
 
