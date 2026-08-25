@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +25,12 @@ import androidx.window.layout.WindowInfoTracker
 import com.mealos.ui.MealOsApp
 import com.mealos.ui.theme.MealOsTheme
 import com.mealos.timer.TimerNotifications
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MealOsViewModel by viewModels()
@@ -31,6 +38,16 @@ class MainActivity : ComponentActivity() {
     private var preciseTimersAvailable by mutableStateOf(false)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         refreshTimerAccess()
+    }
+    private val recipeScanner = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { activityResult ->
+        if (activityResult.resultCode != RESULT_OK) {
+            viewModel.setAssistantScanning(false)
+            return@registerForActivityResult
+        }
+        val result = GmsDocumentScanningResult.fromActivityResultIntent(activityResult.data)
+        val pages = result?.pages?.map { it.imageUri }.orEmpty()
+        if (pages.isEmpty()) viewModel.assistantScanFailed("The scan did not contain any pages.")
+        else recognizeRecipePages(pages)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +67,8 @@ class MainActivity : ComponentActivity() {
                     timerAlertsAvailable = timerAlertsAvailable,
                     preciseTimersAvailable = preciseTimersAvailable,
                     onEnableTimerAlerts = ::enableTimerAlerts,
-                    onEnablePreciseTimers = ::enablePreciseTimers
+                    onEnablePreciseTimers = ::enablePreciseTimers,
+                    onScanRecipe = ::scanRecipe
                 )
             }
         }
@@ -92,6 +110,51 @@ class MainActivity : ComponentActivity() {
             data = "package:$packageName".toUri()
         }
         startActivity(intent)
+    }
+
+    private fun scanRecipe() {
+        viewModel.setAssistantScanning(true)
+        val options = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(8)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build()
+        GmsDocumentScanning.getClient(options).getStartScanIntent(this)
+            .addOnSuccessListener { sender -> recipeScanner.launch(IntentSenderRequest.Builder(sender).build()) }
+            .addOnFailureListener { error ->
+                viewModel.assistantScanFailed(error.message ?: "The document scanner is unavailable on this device.")
+            }
+    }
+
+    private fun recognizeRecipePages(pages: List<Uri>) {
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val text = mutableListOf<String>()
+        fun recognize(index: Int) {
+            if (index >= pages.size) {
+                recognizer.close()
+                val combined = text.mapIndexed { page, value -> "--- Page ${page + 1} ---\n$value" }.joinToString("\n\n")
+                viewModel.attachScannedRecipe(combined, pages.size)
+                return
+            }
+            runCatching { InputImage.fromFilePath(this, pages[index]) }
+                .onFailure {
+                    recognizer.close()
+                    viewModel.assistantScanFailed("MealOS could not open page ${index + 1} of the scan.")
+                }
+                .onSuccess { image ->
+                    recognizer.process(image)
+                        .addOnSuccessListener { result ->
+                            text += result.text
+                            recognize(index + 1)
+                        }
+                        .addOnFailureListener { error ->
+                            recognizer.close()
+                            viewModel.assistantScanFailed(error.message ?: "Text extraction failed on page ${index + 1}.")
+                        }
+                }
+        }
+        recognize(0)
     }
 
     private fun handleRecipeIntent(intent: Intent?) {

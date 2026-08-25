@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mealos.data.RecipeCatalog
+import com.mealos.data.RecipeAssistantClient
+import com.mealos.data.RecipeAssistantStore
 import com.mealos.data.RecipeDocument
 import com.mealos.data.RecipeImportResult
 import com.mealos.model.CookingTimer
@@ -15,6 +17,9 @@ import com.mealos.model.Recipe
 import com.mealos.model.RecipeEditorState
 import com.mealos.model.RecipeOrigin
 import com.mealos.model.RecipeStep
+import com.mealos.model.ChatRole
+import com.mealos.model.RecipeAssistantState
+import com.mealos.model.RecipeChatMessage
 import com.mealos.timer.TimerNotifications
 import com.mealos.timer.TimerStore
 import com.mealos.timer.refreshedAt
@@ -26,12 +31,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.UUID
 
 class MealOsViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as MealOsApplication).repository
     private val timerStore = TimerStore(application)
+    private val assistantStore = RecipeAssistantStore(application)
+    private val assistantClient = RecipeAssistantClient()
 
     val userState: StateFlow<MealOsUserState> = repository.state.stateIn(
         viewModelScope,
@@ -52,6 +60,9 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _timers = MutableStateFlow(timerStore.load())
     val timers = _timers.asStateFlow()
+    private val _assistantState = MutableStateFlow(assistantStore.load())
+    val assistantState = _assistantState.asStateFlow()
+    private var assistantRequestJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -112,6 +123,55 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun clearImportError() {
         _importError.value = null
+    }
+
+    fun setAssistantScanning(scanning: Boolean) {
+        _assistantState.update { it.copy(scanning = scanning, error = null) }
+    }
+
+    fun attachScannedRecipe(text: String, pageCount: Int) {
+        val cleaned = text.trim().take(38_000)
+        if (cleaned.isBlank()) {
+            _assistantState.update { it.copy(scanning = false, error = "MealOS could not find readable text in that scan. Try brighter, flatter pages.") }
+            return
+        }
+        val message = RecipeChatMessage(
+            role = ChatRole.USER,
+            content = "I scanned a recipe. Here is the on-device OCR text:\n\n$cleaned",
+            attachmentLabel = "Scanned recipe",
+            attachmentDetail = "$pageCount ${if (pageCount == 1) "page" else "pages"} · text extracted on device"
+        )
+        mutateAssistant { it.copy(messages = it.messages + message, scanning = false, error = null) }
+    }
+
+    fun assistantScanFailed(message: String) {
+        _assistantState.update { it.copy(scanning = false, error = message) }
+    }
+
+    fun sendAssistantMessage(content: String) {
+        val trimmed = content.trim()
+        if (trimmed.isBlank() || _assistantState.value.sending) return
+        val userMessage = RecipeChatMessage(role = ChatRole.USER, content = trimmed)
+        mutateAssistant { it.copy(messages = it.messages + userMessage, sending = true, error = null) }
+        requestAssistantResponse()
+    }
+
+    fun retryAssistant() {
+        if (_assistantState.value.messages.isEmpty() || _assistantState.value.sending) return
+        _assistantState.update { it.copy(sending = true, error = null) }
+        requestAssistantResponse()
+    }
+
+    fun clearAssistantChat() {
+        assistantRequestJob?.cancel()
+        assistantRequestJob = null
+        assistantStore.clear()
+        _assistantState.value = RecipeAssistantState()
+    }
+
+    fun reviewAssistantDraft() {
+        val draft = _assistantState.value.draft ?: return
+        importRecipe(RecipeDocument.encode(draft))
     }
 
     fun updateEditorRecipe(transform: (Recipe) -> Recipe) {
@@ -177,6 +237,34 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
+    }
+
+    private fun requestAssistantResponse() {
+        val messages = _assistantState.value.messages
+        assistantRequestJob?.cancel()
+        assistantRequestJob = viewModelScope.launch {
+            runCatching { assistantClient.chat(messages) }
+                .onSuccess { response ->
+                    val assistantMessage = RecipeChatMessage(role = ChatRole.ASSISTANT, content = response.reply)
+                    mutateAssistant { current -> current.copy(
+                        messages = current.messages + assistantMessage,
+                        draft = response.draft ?: current.draft,
+                        questions = response.questions,
+                        sources = response.sources,
+                        sending = false,
+                        error = null
+                    ) }
+                }
+                .onFailure { error ->
+                    _assistantState.update { it.copy(sending = false, error = error.message ?: "Recipe Assistant could not connect.") }
+                }
+        }
+    }
+
+    private fun mutateAssistant(transform: (RecipeAssistantState) -> RecipeAssistantState) {
+        val updated = transform(_assistantState.value)
+        _assistantState.value = updated
+        assistantStore.save(updated.copy(sending = false, scanning = false, error = null))
     }
 
     private fun mutateTimers(transform: (Map<String, CookingTimer>) -> Map<String, CookingTimer>) {

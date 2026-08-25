@@ -52,6 +52,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -169,6 +170,7 @@ private enum class Destination(val label: String, val icon: ImageVector) {
     PLAN("Plan", Icons.Default.CalendarMonth),
     RECIPES("Recipes", Icons.AutoMirrored.Filled.MenuBook),
     GROCERY("Grocery", Icons.Default.ShoppingCart),
+    ASSISTANT("Recipe assistant", Icons.Default.AutoAwesome),
     PANTRY("Pantry staples", Icons.Default.Inventory2)
 }
 
@@ -189,13 +191,15 @@ fun MealOsApp(
     timerAlertsAvailable: Boolean,
     preciseTimersAvailable: Boolean,
     onEnableTimerAlerts: () -> Unit,
-    onEnablePreciseTimers: () -> Unit
+    onEnablePreciseTimers: () -> Unit,
+    onScanRecipe: () -> Unit
 ) {
     val userState by viewModel.userState.collectAsStateWithLifecycle()
     val recipes by viewModel.recipes.collectAsStateWithLifecycle()
     val editorState by viewModel.editorState.collectAsStateWithLifecycle()
     val importError by viewModel.importError.collectAsStateWithLifecycle()
     val timers by viewModel.timers.collectAsStateWithLifecycle()
+    val assistantState by viewModel.assistantState.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
@@ -305,7 +309,10 @@ fun MealOsApp(
                     onNewRecipe = {
                         viewModel.startNewRecipe()
                         route = Route.Editor
-                    }
+                    },
+                    fold = fold,
+                    assistantState = assistantState,
+                    onScanRecipe = onScanRecipe
                 )
                 is Route.Detail -> RecipeDetail(
                     recipe = recipes.firstOrNull { it.id == currentRoute.recipeId }
@@ -386,7 +393,10 @@ private fun MainDestination(
     onMenu: () -> Unit,
     onRecipe: (String) -> Unit,
     onCook: (String, PortionMode) -> Unit,
-    onNewRecipe: () -> Unit
+    onNewRecipe: () -> Unit,
+    fold: FoldingFeature?,
+    assistantState: com.mealos.model.RecipeAssistantState,
+    onScanRecipe: () -> Unit
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -395,16 +405,16 @@ private fun MainDestination(
                 title = { Text(if (destination == Destination.TODAY) "MealOS" else destination.label) },
                 navigationIcon = { IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") } },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
+                    containerColor = if (destination == Destination.ASSISTANT) Enamel else MaterialTheme.colorScheme.background,
+                    titleContentColor = if (destination == Destination.ASSISTANT) Cream else MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = if (destination == Destination.ASSISTANT) Cream else MaterialTheme.colorScheme.onBackground
                 )
             )
         }
     ) { padding ->
         Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            color = if (destination == Destination.ASSISTANT) Enamel else MaterialTheme.colorScheme.surface,
+            shape = if (destination == Destination.ASSISTANT) RoundedCornerShape(0.dp) else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             modifier = Modifier.padding(padding).fillMaxSize()
         ) {
             when (destination) {
@@ -412,6 +422,15 @@ private fun MainDestination(
                 Destination.PLAN -> PlannerScreen(state, recipes, viewModel, onRecipe)
                 Destination.RECIPES -> RecipeLibrary(state, recipes, viewModel, onRecipe, onNewRecipe)
                 Destination.GROCERY -> GroceryScreen(state, recipes, viewModel)
+                Destination.ASSISTANT -> RecipeAssistantScreen(
+                    state = assistantState,
+                    fold = fold,
+                    onScan = onScanRecipe,
+                    onSend = viewModel::sendAssistantMessage,
+                    onRetry = viewModel::retryAssistant,
+                    onClear = viewModel::clearAssistantChat,
+                    onReviewDraft = viewModel::reviewAssistantDraft
+                )
                 Destination.PANTRY -> PantryScreen(state, recipes, viewModel)
             }
         }
