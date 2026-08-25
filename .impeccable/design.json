@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-25T00:01:00-04:00",
+  "generatedAt": "2026-08-25T16:04:02-04:00",
   "title": "Design System: MealOS",
   "extensions": {
     "colorMeta": {
@@ -34,6 +34,7 @@
     "typographyMeta": {
       "display-large": { "displayName": "Display Large", "purpose": "Largest arm's-length action statement." },
       "display-medium": { "displayName": "Display Medium", "purpose": "Primary screen and current-step headings." },
+      "display-small": { "displayName": "Display Small", "purpose": "Proofing-table titles and prominent recipe draft names." },
       "headline-large": { "displayName": "Headline Large", "purpose": "Recipe identity and prominent tray headings." },
       "headline-medium": { "displayName": "Headline Medium", "purpose": "Section and shelf headings." },
       "title-large": { "displayName": "Title Large", "purpose": "Item names and compact hierarchy." },
@@ -51,7 +52,8 @@
     "breakpoints": [
       { "name": "cooking-expanded", "value": "720dp" },
       { "name": "recipe-editor-expanded", "value": "720dp" },
-      { "name": "recipe-preview-split", "value": "600dp" }
+      { "name": "recipe-preview-split", "value": "600dp" },
+      { "name": "recipe-assistant-expanded", "value": "720dp" }
     ]
   },
   "components": [
@@ -115,6 +117,20 @@
       "description": "The expanded recipe editor: an enamel section outline, imported-draft notice, active cream work pane, and persistent decisive save action.",
       "html": "<section class=\"ds-editor\"><aside class=\"ds-editor-outline\"><h2>Build the recipe</h2><p>Work through each tray, then check the cooking preview before saving.</p><button class=\"ds-editor-section ds-editor-active\">Basics <b>✓</b></button><button class=\"ds-editor-section\">Ingredients</button><div class=\"ds-editor-notice\">Imported as a draft. Review it before saving.</div></aside><main class=\"ds-editor-pane\"><h3>Name the meal</h3><label>Recipe name<input value=\"Weeknight chicken\"></label></main><footer><button>Save recipe</button></footer></section>",
       "css": ".ds-editor { display: grid; grid-template-columns: 300px 8px minmax(300px, 1fr); grid-template-rows: 1fr auto; min-height: 430px; background: #41573B; color: #083224; font: 15px/22px system-ui, sans-serif; } .ds-editor-outline { grid-column: 1; background: #083224; color: #F3F0E8; padding: 20px; } .ds-editor-outline h2 { margin: 0 0 8px; font: 600 38px/40px 'Barlow Condensed', system-ui, sans-serif; } .ds-editor-outline p { margin: 0 0 16px; } .ds-editor-section { display: flex; justify-content: space-between; width: 100%; min-height: 52px; margin: 8px 0; border: 0; border-radius: 18px; background: #234633; color: #F3F0E8; padding: 14px 16px; font: 600 17px/23px system-ui, sans-serif; text-align: left; } .ds-editor-section:hover { background: #346A53; } .ds-editor-section:focus-visible { outline: 3px solid #C9A442; outline-offset: 2px; } .ds-editor-active { background: #F3F0E8; color: #083224; } .ds-editor-active b { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #C9A442; } .ds-editor-notice { margin-top: 16px; border-radius: 18px; background: rgba(201,164,66,.2); padding: 16px; } .ds-editor-pane { grid-column: 3; background: #F3F0E8; padding: 20px; } .ds-editor-pane h3 { margin: 0 0 18px; font: 600 32px/34px 'Barlow Condensed', system-ui, sans-serif; } .ds-editor-pane label { display: grid; gap: 6px; } .ds-editor-pane input { min-height: 52px; border: 1px solid #6F8477; border-radius: 4px; background: transparent; color: #083224; padding: 0 14px; font: 18px/26px system-ui, sans-serif; } .ds-editor-pane input:focus { outline: 3px solid #C9A442; outline-offset: 2px; } .ds-editor footer { grid-column: 1 / -1; background: #234633; padding: 16px; } .ds-editor footer button { width: 100%; height: 56px; border: 0; border-radius: 28px; background: #C84F13; color: #F3F0E8; font: 600 15px/20px system-ui, sans-serif; } .ds-editor footer button:hover { filter: brightness(1.06); } .ds-editor footer button:active { filter: brightness(.92); } .ds-editor footer button:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; }"
+    },
+    {
+      "name": "Recipe Assistant Proofing Table",
+      "kind": "custom",
+      "description": "The fold-aware assistant world: fixed enamel conversation and cream structured proof, with factual verification and an explicit editor handoff.",
+      "html": "<section class=\"ds-proofing-table\"><div class=\"ds-chat\"><article class=\"ds-turn ds-assistant\"><b>MealOS</b><p>I found a timing detail to confirm.</p></article><article class=\"ds-turn ds-user\"><b>You</b><div class=\"ds-attachment\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 2h9l5 5v15H6V2zm8 2v5h4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg> Scanned recipe · 2 pages</div></article><div class=\"ds-proof-strip\"><span><i>?</i> 1 question</span><span><i class=\"ds-checked\">✓</i> Scan attached</span></div></div><div class=\"ds-proof\"><small>Draft · not saved</small><h2>Weeknight chicken</h2><dl><div><dt>Servings</dt><dd>2</dd></div><div><dt>Total</dt><dd>35 min</dd></div></dl><h3>Ingredients</h3><p>Chicken · potatoes · broccoli</p><button>Review draft</button></div></section>",
+      "css": ".ds-proofing-table { display: grid; grid-template-columns: 1fr 2px 1fr; min-height: 430px; font: 15px/22px system-ui, sans-serif; background: rgba(0,0,0,.38); } .ds-chat { grid-column: 1; display: flex; flex-direction: column; gap: 18px; background: #083224; color: #F3F0E8; padding: 24px 24px 0; } .ds-turn { box-sizing: border-box; border-radius: 22px; padding: 20px; } .ds-turn p { margin: 8px 0 0; font-size: 18px; line-height: 26px; } .ds-assistant { width: 94%; background: #F3F0E8; color: #083224; border: 1px solid #D1C3B0; } .ds-user { width: 72%; align-self: flex-end; background: #234633; color: #F3F0E8; border: 1px solid rgba(243,240,232,.16); } .ds-attachment { display: flex; align-items: center; gap: 12px; margin-top: 10px; border-radius: 14px; background: rgba(8,50,36,.35); padding: 14px; } .ds-attachment svg { width: 28px; height: 28px; flex: 0 0 28px; } .ds-proof-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: auto -24px 0; background: #234633; padding: 11px 18px; font-size: 13px; line-height: 18px; } .ds-proof-strip span { display: flex; align-items: center; gap: 7px; } .ds-proof-strip i { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 50%; background: #C9A442; color: #083224; font-style: normal; font-weight: 700; } .ds-proof-strip .ds-checked { background: #F3F0E8; } .ds-proof { grid-column: 3; background: #F3F0E8; color: #083224; padding: 30px; } .ds-proof h2 { margin: 4px 0 20px; font: 600 44px/44px 'Barlow Condensed', system-ui, sans-serif; } .ds-proof small { color: #234633; font-size: 18px; } .ds-proof dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .ds-proof dl div { border: 1px solid #D1C3B0; border-radius: 10px; padding: 12px; } .ds-proof dt { color: #234633; font-size: 13px; } .ds-proof dd { margin: 0; font-weight: 700; } .ds-proof button { width: 100%; height: 62px; margin-top: 24px; border: 0; border-radius: 28px; background: #C84F13; color: #F3F0E8; font: 600 15px/20px system-ui, sans-serif; } .ds-proof button:hover { filter: brightness(1.06); } .ds-proof button:active { filter: brightness(.92); } .ds-proof button:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; } @media (max-width: 719px) { .ds-proofing-table { display: block; } .ds-proof { display: none; } .ds-chat { min-height: 430px; } }"
+    },
+    {
+      "name": "Recipe Assistant Composer",
+      "kind": "input",
+      "description": "The keyboard-safe scan, message, and send row; send is disabled until nonblank input can be submitted.",
+      "html": "<form class=\"ds-assistant-composer\"><button class=\"ds-scan\" type=\"button\" aria-label=\"Scan recipe\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 4l1.5-2h3L15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4zm3 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z\" fill=\"currentColor\"/></svg></button><textarea aria-label=\"Message MealOS\" placeholder=\"Message MealOS…\"></textarea><button class=\"ds-send\" type=\"submit\" disabled aria-label=\"Send\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></button></form>",
+      "css": ".ds-assistant-composer { display: flex; align-items: center; gap: 10px; background: #083224; padding: 14px 20px 8px; font: 15px/22px system-ui, sans-serif; } .ds-assistant-composer button { border: 0; color: #F3F0E8; cursor: pointer; } .ds-assistant-composer button svg { width: 24px; height: 24px; } .ds-scan { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: transparent; } .ds-scan:hover { background: #234633; } .ds-assistant-composer textarea { box-sizing: border-box; flex: 1; min-height: 56px; max-height: 112px; resize: vertical; border: 1px solid #D1C3B0; border-radius: 4px; background: #F3F0E8; color: #083224; padding: 14px; font: 18px/26px system-ui, sans-serif; } .ds-assistant-composer textarea:focus { border-color: #C9A442; outline: 2px solid #C9A442; outline-offset: 1px; } .ds-send { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #C9A442; color: #083224 !important; } .ds-send:hover:not(:disabled) { filter: brightness(1.06); } .ds-send:active:not(:disabled) { transform: scale(.96); } .ds-send:focus-visible { outline: 3px solid #F3F0E8; outline-offset: 2px; } .ds-send:disabled { background: #234633; color: rgba(243,240,232,.42) !important; cursor: default; }"
     }
   ],
   "narrative": {
@@ -128,7 +144,7 @@
       "Minimal shadow; depth comes primarily from tonal and material contrast."
     ],
     "rules": [
-      { "name": "The Two Warm Signals Rule", "body": "Yellow means timing or active progress; burnt orange means a decisive action. Do not swap their jobs.", "section": "colors" },
+      { "name": "The Two Warm Signals Rule", "body": "Yellow means timing, active progress, or a verification state that still needs attention; burnt orange means a decisive explicit action. Do not swap their jobs.", "section": "colors" },
       { "name": "The Cream Is for Reading Rule", "body": "Use cream as a prepared content field against enamel, not as a decorative accent scattered through the interface.", "section": "colors" },
       { "name": "The Arm's-Length Rule", "body": "The current cooking action gets the display scale; supporting details stay in the Material hierarchy and must not compete with it.", "section": "typography" },
       { "name": "The Enamel Layer Rule", "body": "Establish depth with adjacent tonal surfaces before adding elevation; never introduce glass, glow, or decorative drop-shadow stacks.", "section": "elevation" }
@@ -139,14 +155,17 @@
       "Do reflow cooking mode from balanced panes to one column at the observed 720 dp threshold while preserving working state.",
       "Do keep primary touch controls generous, with circular timer controls at 56 dp and standard Material icon targets elsewhere.",
       "Do use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation.",
-      "Do keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language."
+      "Do keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language.",
+      "Do keep the Recipe Assistant's enamel conversation and cream proof colors fixed across themes, and preserve the equal-pane split at 720 dp and above.",
+      "Do keep assistant verification factual: distinguish unresolved questions, attached scans, and checked sources, and keep the composer above navigation and IME insets."
     ],
     "donts": [
       "Don't turn the interface into a generic dashboard or uniform card grid.",
       "Don't use food-blog photography, bespoke recipe illustration, glass effects, or decorative shadow stacks as the system's identity.",
       "Don't add a permanently visible navigation rail; protect the unfolded cooking workspace with the hidden drawer.",
       "Don't shrink instructions into label-sized type or let secondary controls compete with the current cooking action.",
-      "Don't let AI-created or externally shared recipes bypass the draft review and explicit save step."
+      "Don't let AI-created or externally shared recipes bypass the draft review and explicit save step.",
+      "Don't clear an assistant conversation or its draft without an explicit confirmation and a safe way back."
     ]
   }
 }

@@ -1,0 +1,11 @@
+{
+  "generator": "OpenAI built-in image_gen",
+  "use_case": "ui-mockup",
+  "surface": "MealOS Recipe Assistant",
+  "composition": "Conversation Roll",
+  "viewport": "Samsung Galaxy Z Fold8 Ultra unfolded",
+  "width_px": 1322,
+  "height_px": 1190,
+  "approved": false,
+  "prompt": "Make chat the broad chronological surface, place the generated recipe draft inline, and pin a compact Draft ready review shelf in the established MealOS visual system."
+}

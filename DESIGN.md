@@ -39,6 +39,11 @@ typography:
     fontSize: "52sp"
     fontWeight: 600
     lineHeight: "50sp"
+  display-small:
+    fontFamily: "Barlow Condensed"
+    fontSize: "44sp"
+    fontWeight: 600
+    lineHeight: "44sp"
   headline-large:
     fontFamily: "Barlow Condensed"
     fontSize: "38sp"
@@ -118,6 +123,25 @@ components:
     textColor: "{colors.warm-cream}"
     rounded: "{rounded.round}"
     size: "56dp"
+  assistant-turn:
+    backgroundColor: "{colors.warm-cream}"
+    textColor: "{colors.deep-enamel}"
+    rounded: "{rounded.tray-compact}"
+    padding: "20dp"
+  user-turn:
+    backgroundColor: "{colors.raised-enamel}"
+    textColor: "{colors.warm-cream}"
+    rounded: "{rounded.tray-compact}"
+    padding: "20dp"
+  assistant-proof-strip:
+    backgroundColor: "{colors.raised-enamel}"
+    textColor: "{colors.warm-cream}"
+    padding: "11dp 18dp"
+  review-draft-button:
+    backgroundColor: "{colors.decisive-orange}"
+    textColor: "{colors.warm-cream}"
+    rounded: "{rounded.tray-large}"
+    height: "62dp"
 ---
 
 # Design System: MealOS
@@ -168,7 +192,7 @@ The palette behaves like enamel cookware and warm prep paper: dark greens establ
 
 ### Named Rules
 
-**The Two Warm Signals Rule.** Yellow means timing or active progress; burnt orange means a decisive action. Do not swap their jobs.
+**The Two Warm Signals Rule.** Yellow means timing, active progress, or a verification state that still needs attention; burnt orange means a decisive explicit action. Do not swap their jobs.
 
 **The Cream Is for Reading Rule.** Use cream as a prepared content field against enamel, not as a decorative accent scattered through the interface.
 
@@ -184,6 +208,7 @@ The palette behaves like enamel cookware and warm prep paper: dark greens establ
 
 - **Display Large:** The largest action or destination statement; tightly led for compact impact.
 - **Display Medium:** Primary screen headings and current cooking-step titles.
+- **Display Small:** Proofing-table titles and prominent recipe draft names that need display character without competing with the current cooking action.
 - **Headline Large / Medium:** Recipe identity, tray headings, and major section boundaries.
 - **Title Large / Medium:** Item names, timer labels, and compact hierarchy inside trays.
 - **Body Large / Medium:** Instructions, explanatory copy, quantities, and supporting information.
@@ -202,6 +227,8 @@ At widths of 720 dp and above, cooking mode becomes a balanced two-pane station:
 The recipe editor follows the same work-surface logic. At 720 dp and above, a 300 dp enamel outline holds Basics, Ingredients, Steps, and Preview beside the active cream form pane, separated by an 8 dp rule; below 720 dp, those sections become a wrapping chip row above one scrollable pane. The preview itself splits step and ingredient trays at 600 dp and stacks below that width. Save remains a full-width persistent action on every layout.
 
 Navigation remains a hidden Material drawer so the unfolded workspace is not consumed by a permanent rail. The drawer is 312 dp wide in the implementation and opens from the standard menu target. Edge-to-edge safe drawing and navigation-bar insets remain part of every screen composition.
+
+The Recipe Assistant uses the same 720 dp expansion threshold. Expanded layouts split into equal-width conversation and recipe-proof panes, with a 2 dp dark material seam or an 8 dp seam when the folding feature separates the display. Compact layouts keep one conversation column and place draft review inline. The conversation column owns both navigation-bar and IME insets so its verification strip, composer, and “New chat” control remain reachable when the keyboard opens.
 
 ## Elevation & Depth
 
@@ -241,6 +268,7 @@ The silhouette vocabulary is generous but not uniform. Large prep trays and time
 - **Style:** Material 3 outlined text fields for search and notes, inheriting the active color scheme rather than creating a separate form aesthetic.
 - **Use:** Search stays single-line; notes may expand to multiple lines.
 - **Editor use:** Group fields into named work trays rather than presenting one undifferentiated form. Ingredient and step rows use 22 dp tonal containers, with add, reorder, and remove controls kept adjacent to the item they affect.
+- **Assistant composer:** Use a warm-cream outlined field on deep enamel, with timer-yellow focus and a warm-line idle border. The 52 dp circular send control is yellow only when nonblank input can be sent; while empty or sending it returns to raised enamel with visibly muted cream content. The scan control remains separate and exposes scanning progress in place.
 
 ### Navigation
 
@@ -254,6 +282,16 @@ The recipe editor is a guided mise en place bench, not a spreadsheet. Basics, In
 The bottom save shelf uses raised enamel and one full-width decisive-orange action. Closing the editor or using Android Back with unsaved changes opens a native confirmation dialog with “Keep editing” as the safe escape and “Discard” as the explicit destructive choice. Validation remains in-context inside the editor rather than moving the cook to a separate error screen.
 
 On the Recipes bench, “Create a recipe” remains the primary action. “Copy AI recipe prompt” is an outlined secondary entry with short helper text explaining the handoff: paste into ChatGPT, then share the returned JSON to MealOS for review. Copying confirms with lightweight native feedback; AI assistance never masquerades as automatic in-app generation.
+
+### Recipe Assistant
+
+The selected assistant composition is the **Proofing Table** (seed `e63896b6`). At 720 dp and wider, chat and the structured recipe proof hold equal weight across the fold. The conversation pane is deep enamel and uses 94%-width cream assistant sheets plus 72%-width raised-enamel user turns, both with 22 dp corners, 20 dp padding, and explicit speaker labels. The recipe proof remains a fixed warm-cream reading surface. These fixed surface colors do not invert with the app theme: the stable material boundary is how the user distinguishes conversation from proof at a glance. Compact screens stay conversation-first and insert a cream draft-review card into the history when a draft becomes available.
+
+A raised-enamel two-item verification strip separates history from composition. One item reports unresolved questions; the other reports scan and cited-source state without claiming verification that did not occur. Yellow question marks mean unresolved or ready-to-scan state, while cream checks mean the represented step is complete. Scanned-document attachments stay visibly embedded inside their message sheet with a document icon, label, and optional detail.
+
+The warm-cream proof structures recipe name and unsaved status, open questions, servings and timing, ingredients, numbered steps, and cited sources. Its 62 dp decisive-orange “Review draft” action always hands off to the existing editor; the assistant never bypasses review or explicit save. Starting “New chat” is also explicit: show a Material confirmation that says the conversation and draft will be cleared from this device, with “Keep chat” as the safe escape and “Clear and start over” as the destructive choice.
+
+Approved comp: `.impeccable/mocks/decision/chat-proofing-table-contrast.webp`.
 
 ### Step Preview
 
@@ -279,6 +317,8 @@ A thin 18 dp-high measurement track uses supporting sage for the line and inacti
 - **Do** keep primary touch controls generous, with circular timer controls at 56 dp and standard Material icon targets elsewhere.
 - **Do** use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation.
 - **Do** keep imported status, validation, and unsaved-work protection visible inside the authoring flow without introducing a new accent language.
+- **Do** keep the Recipe Assistant's enamel conversation and cream proof colors fixed across themes, and preserve the equal-pane split at 720 dp and above.
+- **Do** keep assistant verification factual: distinguish unresolved questions, attached scans, and checked sources, and keep the composer above navigation and IME insets.
 
 ### Don't:
 
@@ -287,3 +327,4 @@ A thin 18 dp-high measurement track uses supporting sage for the line and inacti
 - **Don't** add a permanently visible navigation rail; protect the unfolded cooking workspace with the hidden drawer.
 - **Don't** shrink instructions into label-sized type or let secondary controls compete with the current cooking action.
 - **Don't** let AI-created or externally shared recipes bypass the draft review and explicit save step.
+- **Don't** clear an assistant conversation or its draft without an explicit confirmation and a safe way back.
