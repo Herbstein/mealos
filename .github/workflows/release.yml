@@ -34,7 +34,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Install Android 37 platform
-        run: "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
 
       - name: Resolve release version
         shell: bash
