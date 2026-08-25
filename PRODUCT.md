@@ -33,7 +33,8 @@ MealOS treats the foldable device as a kitchen work surface: the cover screen is
 ## Capabilities and Constraints
 
 - Seeded library of 15 core meals from the original meal-planning conversation.
-- Recipe detail and cooking mode with large sequential steps, equipment-specific guidance, and multiple timers.
+- Recipe detail and cooking mode with large sequential steps, equipment-specific guidance, and multiple timers that survive app termination and phone restarts.
+- Timer alerts recover clearly from denied Android notification access, and precise alarms degrade honestly when special access is unavailable.
 - Portion choices for one, two, and “dinner + lunch tomorrow,” with recalculated ingredient quantities.
 - Weekly meal planner and consolidated grocery list grouped by store category.
 - Pantry staples can be excluded from shopping.

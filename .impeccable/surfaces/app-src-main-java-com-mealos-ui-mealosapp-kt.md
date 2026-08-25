@@ -58,7 +58,7 @@ Approved modifications:
 | Previous-step preview | Semantic Compose | One compact row labeled “Previous,” with title and instruction preview, immediately above the current step. |
 | Next-step previews | Semantic Compose | Up to two compact rows with step numbers, instruction previews, and forward affordances. |
 | Ingredient tray | LazyColumn | Normalized ingredient name, scaled quantity, pantry/check state, and reusable pictogram. |
-| Timer shelf | Compose state and foreground notification integration | Two simultaneous large timers with pause and +1 minute controls. |
+| Timer shelf | Persisted Compose state and Android alarm integration | Two simultaneous large timers with pause and +1 minute controls; countdowns survive process death and reboot. Denied alert or precise-alarm access appears below the live controls with direct recovery actions. |
 | Reusable pictograms | Material Symbols or simple code-native icons | Ingredient-category and equipment icons, not bespoke recipe drawings. |
 | Drawer destinations | Material NavigationDrawer | Today, Plan, Recipes, Grocery, plus Settings. |
 

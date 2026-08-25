@@ -8,6 +8,8 @@ import com.mealos.model.CookingTimer
 import com.mealos.model.MealOsUserState
 import com.mealos.model.PlanEntry
 import com.mealos.timer.TimerNotifications
+import com.mealos.timer.TimerStore
+import com.mealos.timer.refreshedAt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,9 +19,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MealOsViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = (application as MealOsApplication).repository
+    private val timerStore = TimerStore(application)
 
     val userState: StateFlow<MealOsUserState> = repository.state.stateIn(
         viewModelScope,
@@ -27,7 +31,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         MealOsUserState()
     )
 
-    private val _timers = MutableStateFlow<Map<String, CookingTimer>>(emptyMap())
+    private val _timers = MutableStateFlow(timerStore.load())
     val timers = _timers.asStateFlow()
 
     init {
@@ -35,10 +39,14 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
             while (isActive) {
                 val now = System.currentTimeMillis()
                 _timers.update { timers ->
-                    timers.mapValues { (_, timer) ->
-                        if (!timer.running || timer.endAtEpochMs == null) timer
-                        else timer.copy(remainingMs = (timer.endAtEpochMs - now).coerceAtLeast(0))
+                    var completed = false
+                    val updated = timers.mapValues { (_, timer) ->
+                        val refreshed = timer.refreshedAt(now)
+                        if (timer.running && !refreshed.running) completed = true
+                        refreshed
                     }
+                    if (completed) timerStore.save(updated)
+                    updated
                 }
                 delay(1_000)
             }
@@ -55,9 +63,9 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     fun clearPlan() = launch { repository.clearPlan() }
 
     fun addTimer(label: String, seconds: Int) {
-        val id = label.lowercase().replace(" ", "-")
+        val id = UUID.randomUUID().toString()
         val duration = seconds * 1_000L
-        _timers.update { it + (id to CookingTimer(id, label, duration, remainingMs = duration)) }
+        mutateTimers { it + (id to CookingTimer(id, label, duration, remainingMs = duration)) }
     }
 
     fun toggleTimer(id: String) {
@@ -65,11 +73,11 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         if (current.running) {
             TimerNotifications.cancel(getApplication(), id)
             val remaining = ((current.endAtEpochMs ?: 0L) - System.currentTimeMillis()).coerceAtLeast(0)
-            _timers.update { it + (id to current.copy(running = false, endAtEpochMs = null, remainingMs = remaining)) }
+            mutateTimers { it + (id to current.copy(running = false, endAtEpochMs = null, remainingMs = remaining)) }
         } else {
             val endAt = System.currentTimeMillis() + current.remainingMs
+            mutateTimers { it + (id to current.copy(running = true, endAtEpochMs = endAt)) }
             TimerNotifications.schedule(getApplication(), id, current.label, endAt)
-            _timers.update { it + (id to current.copy(running = true, endAtEpochMs = endAt)) }
         }
     }
 
@@ -81,7 +89,12 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         if (updated.running && updated.endAtEpochMs != null) {
             TimerNotifications.schedule(getApplication(), id, updated.label, updated.endAtEpochMs)
         }
-        _timers.update { it + (id to updated) }
+        mutateTimers { it + (id to updated) }
+    }
+
+    fun rescheduleRunningTimers() {
+        TimerNotifications.reschedulePersisted(getApplication())
+        _timers.value = timerStore.load()
     }
 
     fun seedPlanIfEmpty() {
@@ -93,5 +106,11 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
+    }
+
+    private fun mutateTimers(transform: (Map<String, CookingTimer>) -> Map<String, CookingTimer>) {
+        val updated = transform(_timers.value)
+        timerStore.save(updated)
+        _timers.value = updated
     }
 }

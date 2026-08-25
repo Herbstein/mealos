@@ -67,6 +67,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
@@ -174,7 +175,14 @@ private enum class CookingPane { STEP, WORKSPACE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
+fun MealOsApp(
+    viewModel: MealOsViewModel,
+    fold: FoldingFeature?,
+    timerAlertsAvailable: Boolean,
+    preciseTimersAvailable: Boolean,
+    onEnableTimerAlerts: () -> Unit,
+    onEnablePreciseTimers: () -> Unit
+) {
     val userState by viewModel.userState.collectAsStateWithLifecycle()
     val timers by viewModel.timers.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -259,6 +267,10 @@ fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
                     pantry = userState.pantry,
                     viewModel = viewModel,
                     fold = fold,
+                    timerAlertsAvailable = timerAlertsAvailable,
+                    preciseTimersAvailable = preciseTimersAvailable,
+                    onEnableTimerAlerts = onEnableTimerAlerts,
+                    onEnablePreciseTimers = onEnablePreciseTimers,
                     onBack = { route = Route.Detail(currentRoute.recipeId) },
                     onMenu = { scope.launch { drawerState.open() } }
                 )
@@ -634,6 +646,10 @@ private fun CookingMode(
     pantry: Set<String>,
     viewModel: MealOsViewModel,
     fold: FoldingFeature?,
+    timerAlertsAvailable: Boolean,
+    preciseTimersAvailable: Boolean,
+    onEnableTimerAlerts: () -> Unit,
+    onEnablePreciseTimers: () -> Unit,
     onBack: () -> Unit,
     onMenu: () -> Unit
 ) {
@@ -689,7 +705,12 @@ private fun CookingMode(
             Row(Modifier.fillMaxSize()) {
                 StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.weight(1f).verticalScroll(stepScroll))
                 Spacer(Modifier.width(hingeWidth).fillMaxHeight().background(Color(0xFF41573B)))
-                WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.weight(1f).verticalScroll(workspaceScroll))
+                WorkspacePane(
+                    recipe, portion, timers, pantry, viewModel,
+                    timerAlertsAvailable, preciseTimersAvailable,
+                    onEnableTimerAlerts, onEnablePreciseTimers,
+                    Modifier.weight(1f).verticalScroll(workspaceScroll)
+                )
             }
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(compactScroll).padding(bottom = 20.dp)) {
@@ -703,7 +724,12 @@ private fun CookingMode(
                     onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) },
                     Modifier.fillMaxWidth().onSizeChanged { compactStepHeightPx = it.height }
                 )
-                WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.fillMaxWidth())
+                WorkspacePane(
+                    recipe, portion, timers, pantry, viewModel,
+                    timerAlertsAvailable, preciseTimersAvailable,
+                    onEnableTimerAlerts, onEnablePreciseTimers,
+                    Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -778,7 +804,18 @@ private fun StepPane(
 }
 
 @Composable
-private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<CookingTimer>, pantry: Set<String>, viewModel: MealOsViewModel, modifier: Modifier = Modifier) {
+private fun WorkspacePane(
+    recipe: Recipe,
+    portion: PortionMode,
+    timers: List<CookingTimer>,
+    pantry: Set<String>,
+    viewModel: MealOsViewModel,
+    timerAlertsAvailable: Boolean,
+    preciseTimersAvailable: Boolean,
+    onEnableTimerAlerts: () -> Unit,
+    onEnablePreciseTimers: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(vertical = 12.dp)) {
@@ -794,7 +831,10 @@ private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<Coo
                 }
             }
         }
-        TimerShelf(timers, viewModel)
+        TimerShelf(
+            timers, viewModel, timerAlertsAvailable, preciseTimersAvailable,
+            onEnableTimerAlerts, onEnablePreciseTimers
+        )
     }
 }
 
@@ -818,7 +858,14 @@ private fun StaticChip(label: String, icon: ImageVector? = null) {
 }
 
 @Composable
-private fun TimerShelf(timers: List<CookingTimer>, viewModel: MealOsViewModel) {
+private fun TimerShelf(
+    timers: List<CookingTimer>,
+    viewModel: MealOsViewModel,
+    timerAlertsAvailable: Boolean,
+    preciseTimersAvailable: Boolean,
+    onEnableTimerAlerts: () -> Unit,
+    onEnablePreciseTimers: () -> Unit
+) {
     Surface(color = RaisedEnamel, contentColor = Cream, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Timers", style = MaterialTheme.typography.headlineMedium)
@@ -831,6 +878,70 @@ private fun TimerShelf(timers: List<CookingTimer>, viewModel: MealOsViewModel) {
             timers.take(2).forEachIndexed { index, timer ->
                 TimerControl(timer, if (index == 0) TimerYellow else Color(0xFFFF7A32), { viewModel.toggleTimer(timer.id) }, { viewModel.addMinute(timer.id) })
             }
+            if (timers.isNotEmpty() && (!timerAlertsAvailable || !preciseTimersAvailable)) {
+                TimerAccessRecovery(
+                    timerAlertsAvailable = timerAlertsAvailable,
+                    preciseTimersAvailable = preciseTimersAvailable,
+                    onEnableTimerAlerts = onEnableTimerAlerts,
+                    onEnablePreciseTimers = onEnablePreciseTimers
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimerAccessRecovery(
+    timerAlertsAvailable: Boolean,
+    preciseTimersAvailable: Boolean,
+    onEnableTimerAlerts: () -> Unit,
+    onEnablePreciseTimers: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (!timerAlertsAvailable) {
+            TimerAccessRow(
+                icon = Icons.Default.NotificationsOff,
+                title = "Timer alerts are off",
+                description = "MealOS keeps counting, but Android cannot alert you when time is up.",
+                action = "Turn on alerts",
+                onAction = onEnableTimerAlerts
+            )
+        }
+        if (!timerAlertsAvailable && !preciseTimersAvailable) {
+            HorizontalDivider(color = Cream.copy(alpha = 0.18f))
+        }
+        if (!preciseTimersAvailable) {
+            TimerAccessRow(
+                icon = Icons.Default.AccessTime,
+                title = "Precise timing is off",
+                description = "Timers still run, but Android may deliver them late while the phone sleeps.",
+                action = "Allow precise timing",
+                onAction = onEnablePreciseTimers
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimerAccessRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    action: String,
+    onAction: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(icon, contentDescription = null, tint = TimerYellow, modifier = Modifier.padding(top = 3.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = Cream.copy(alpha = 0.82f))
+            TextButton(onClick = onAction, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)) {
+                Text(action, color = TimerYellow)
+            }
         }
     }
 }
@@ -838,7 +949,7 @@ private fun TimerShelf(timers: List<CookingTimer>, viewModel: MealOsViewModel) {
 @Composable
 private fun TimerControl(timer: CookingTimer, accent: Color, onToggle: () -> Unit, onAddMinute: () -> Unit) {
     val totalSeconds = (timer.remainingMs / 1_000).coerceAtLeast(0)
-    val text = "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
+    val text = if (totalSeconds == 0L) "Done" else "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60)
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Enamel).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -848,7 +959,11 @@ private fun TimerControl(timer: CookingTimer, accent: Color, onToggle: () -> Uni
             Text(timer.label, style = MaterialTheme.typography.titleMedium, color = accent)
             Text(text, fontSize = 40.sp, fontWeight = FontWeight.Bold, color = accent, modifier = Modifier.semantics { contentDescription = "${timer.label} timer $text" })
         }
-        IconButton(onClick = onToggle, modifier = Modifier.size(56.dp).background(RaisedEnamel, CircleShape)) { Icon(if (timer.running) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = if (timer.running) "Pause ${timer.label}" else "Start ${timer.label}") }
+        IconButton(
+            onClick = onToggle,
+            enabled = timer.remainingMs > 0,
+            modifier = Modifier.size(56.dp).background(RaisedEnamel, CircleShape)
+        ) { Icon(if (timer.running) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = if (timer.running) "Pause ${timer.label}" else "Start ${timer.label}") }
         IconButton(onClick = onAddMinute, modifier = Modifier.size(56.dp).background(RaisedEnamel, CircleShape)) { Icon(Icons.Default.Add, contentDescription = "Add one minute to ${timer.label}") }
     }
 }

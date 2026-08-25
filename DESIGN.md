@@ -252,6 +252,8 @@ A compact cream row with 18 dp corners and 12 × 16 dp padding. Its orange label
 
 A 22 dp deep-enamel well inside the raised-enamel shelf. The timer label and large 40 sp clock share the timer accent; pause/play and +1 minute controls are 56 dp circles. At most two simultaneous timer controls are shown on the shelf.
 
+Running timers remain the first content in the shelf. If Android has blocked notifications or precise alarms, compact recovery rows follow the countdowns with direct language and a settings action. The app never hides or disables the timer itself: denied access degrades to an inexact alarm while preserving the absolute finish time locally.
+
 ### Progress Rule
 
 A thin 18 dp-high measurement track uses supporting sage for the line and inactive points, timer yellow for completed points, and a larger current point. It communicates discrete cooking steps rather than percentage completion.
