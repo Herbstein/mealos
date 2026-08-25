@@ -140,6 +140,7 @@ import com.mealos.ui.theme.Cream
 import com.mealos.ui.theme.Enamel
 import com.mealos.ui.theme.RaisedEnamel
 import com.mealos.ui.theme.TimerYellow
+import com.mealos.ui.theme.WarmLine
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -618,13 +619,13 @@ private fun CookingMode(
         val expanded = maxWidth >= 720.dp
         if (expanded) {
             Row(Modifier.fillMaxSize()) {
-                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(step.title, seconds) }, Modifier.weight(1f))
+                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.weight(1f))
                 Spacer(Modifier.width(hingeWidth).fillMaxHeight().background(Color(0xFF41573B)))
                 WorkspacePane(recipe, portion, timers, viewModel, Modifier.weight(1f))
             }
         } else {
             LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
-                item { StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(step.title, seconds) }, Modifier.fillMaxWidth()) }
+                item { StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.fillMaxWidth()) }
                 item { WorkspacePane(recipe, portion, timers, viewModel, Modifier.fillMaxWidth()) }
             }
         }
@@ -644,7 +645,7 @@ private fun StepPane(
 ) {
     val current = recipe.steps[stepIndex]
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation", tint = Cream) }
             Column(Modifier.weight(1f)) {
                 Text(recipe.shortName, style = MaterialTheme.typography.titleLarge, color = Cream, maxLines = 2)
@@ -658,10 +659,29 @@ private fun StepPane(
                 Text("Step ${stepIndex + 1} of ${recipe.steps.size}", style = MaterialTheme.typography.titleMedium)
                 Text(current.title, style = MaterialTheme.typography.displayMedium)
                 Text(current.instruction, style = MaterialTheme.typography.bodyLarge)
-                AssistChip(onClick = {}, label = { Text(current.equipment) }, leadingIcon = { Icon(Icons.Default.Kitchen, contentDescription = null) })
+                AssistChip(
+                    onClick = {},
+                    label = { Text(current.equipment) },
+                    leadingIcon = { Icon(Icons.Default.Kitchen, contentDescription = null) },
+                    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
+                        containerColor = Cream,
+                        labelColor = Enamel,
+                        leadingIconContentColor = Enamel
+                    ),
+                    border = androidx.compose.material3.AssistChipDefaults.assistChipBorder(
+                        enabled = true,
+                        borderColor = WarmLine
+                    )
+                )
                 current.tip?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold) }
                 current.timerSeconds?.let { seconds ->
-                    FilledTonalButton(onClick = { onAddTimer(seconds) }) {
+                    FilledTonalButton(
+                        onClick = { onAddTimer(seconds) },
+                        colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Color(0xFFE6DDF7),
+                            contentColor = Enamel
+                        )
+                    ) {
                         Icon(Icons.Default.AccessTime, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text("Add ${seconds / 60} min timer")
@@ -675,7 +695,12 @@ private fun StepPane(
         Button(
             onClick = { if (stepIndex < recipe.steps.lastIndex) onStep(stepIndex + 1) },
             enabled = stepIndex < recipe.steps.lastIndex,
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = ActionOrange),
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = ActionOrange,
+                contentColor = Cream,
+                disabledContainerColor = ActionOrange.copy(alpha = 0.45f),
+                disabledContentColor = Cream.copy(alpha = 0.7f)
+            ),
             modifier = Modifier.fillMaxWidth().height(60.dp)
         ) {
             Icon(Icons.Default.CheckCircle, contentDescription = null)
@@ -691,11 +716,11 @@ private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<Coo
         Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(vertical = 12.dp)) {
                 Text("Ingredients", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
-                recipe.ingredients.take(6).forEach { ingredient ->
+                recipe.ingredients.forEach { ingredient ->
                     ListItem(
-                        headlineContent = { Text(ingredient.name, fontWeight = FontWeight.SemiBold) },
-                        leadingContent = { CategoryIcon(ingredient.category) },
-                        trailingContent = { Text(scaledAmount(ingredient, recipe, portion)) },
+                        headlineContent = { Text(ingredient.name, color = Enamel, fontWeight = FontWeight.SemiBold) },
+                        leadingContent = { CategoryIcon(ingredient.category, tint = Enamel) },
+                        trailingContent = { Text(scaledAmount(ingredient, recipe, portion), color = Enamel) },
                         colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Cream)
                     )
                 }
@@ -823,3 +848,8 @@ private fun dayLabel(dayIndex: Int): String {
     return if (dayIndex == 0) "Today · ${day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
     else day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 }
+
+private fun timerLabel(stepTitle: String): String = stepTitle
+    .removePrefix("Start the ")
+    .removePrefix("Cook the ")
+    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
