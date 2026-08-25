@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-24T20:34:05-04:00",
+  "title": "Design System: MealOS",
+  "extensions": {
+    "colorMeta": {
+      "deep-enamel": { "role": "primary", "displayName": "Deep Enamel", "canonical": "#083224", "tonalRamp": ["#031A12", "#083224", "#174D39", "#346A53", "#5A8872", "#86A895", "#B9CBBE", "#EDF3EE"] },
+      "raised-enamel": { "role": "primary", "displayName": "Raised Enamel", "canonical": "#234633", "tonalRamp": ["#0A1C12", "#173526", "#234633", "#3D644F", "#638471", "#8EA595", "#BBC9C0", "#EEF2EF"] },
+      "warm-cream": { "role": "neutral", "displayName": "Warm Cream", "canonical": "#F3F0E8", "tonalRamp": ["#25231E", "#49463E", "#6D695F", "#918D83", "#B5B1A8", "#D5D1C8", "#E8E4DC", "#F7F5EF"] },
+      "warm-line": { "role": "neutral", "displayName": "Warm Line", "canonical": "#D1C3B0", "tonalRamp": ["#281F17", "#514235", "#796757", "#9E8D7A", "#BEAD9A", "#D6C7B6", "#E8DED2", "#F8F3ED"] },
+      "decisive-orange": { "role": "secondary", "displayName": "Decisive Orange", "canonical": "#C84F13", "tonalRamp": ["#2B0B00", "#5A1B00", "#882D00", "#B8410B", "#D9662D", "#E99564", "#F1C2A4", "#FBEDE3"] },
+      "timer-yellow": { "role": "tertiary", "displayName": "Timer Yellow", "canonical": "#C9A442", "tonalRamp": ["#271C00", "#504000", "#77620B", "#9F8427", "#C9A442", "#DDC475", "#EDE0AF", "#FAF4E1"] },
+      "supporting-sage": { "role": "neutral", "displayName": "Supporting Sage", "canonical": "#6F8477", "tonalRamp": ["#111A14", "#29382E", "#435649", "#5E7566", "#7C9585", "#9FB5A7", "#C5D3CA", "#F0F4F1"] },
+      "light-surface-variant": { "role": "neutral", "displayName": "Warm Paper Variant", "canonical": "#E6DFD2", "tonalRamp": ["#242018", "#494238", "#6D665A", "#928B7E", "#B7B0A3", "#D4CDBF", "#E6DFD2", "#F8F4EC"] },
+      "light-on-surface-variant": { "role": "neutral", "displayName": "Enamel Ink", "canonical": "#41573B", "tonalRamp": ["#0A180B", "#223523", "#41573B", "#60765A", "#80977A", "#A4B7A0", "#CAD5C7", "#F1F4F0"] },
+      "light-error": { "role": "neutral", "displayName": "Light Error", "canonical": "#B3261E", "tonalRamp": ["#2B0302", "#570B08", "#831610", "#B3261E", "#D34C42", "#E5847C", "#F0B9B4", "#FCEAE8"] },
+      "dark-primary": { "role": "primary", "displayName": "Dark Sage Primary", "canonical": "#9CC9AC", "tonalRamp": ["#102017", "#274233", "#42654F", "#62886E", "#84AA8F", "#A6CBB1", "#CBE3D2", "#F0F8F2"] },
+      "dark-on-primary": { "role": "primary", "displayName": "Dark Primary Ink", "canonical": "#06281C", "tonalRamp": ["#03160F", "#06281C", "#164737", "#346957", "#5C8B76", "#89AE9B", "#BBD1C5", "#EEF5F1"] },
+      "dark-primary-container": { "role": "primary", "displayName": "Dark Raised Enamel", "canonical": "#1C4935", "tonalRamp": ["#071B11", "#123526", "#1C4935", "#376852", "#5D8971", "#8AAB97", "#B9CEC1", "#EDF4EF"] },
+      "dark-on-primary-container": { "role": "primary", "displayName": "Dark Container Mint", "canonical": "#D8F4DF", "tonalRamp": ["#18251B", "#344B39", "#527158", "#72977A", "#94BC9D", "#B8DDBF", "#D8F4DF", "#F2FBF4"] },
+      "dark-secondary": { "role": "secondary", "displayName": "Soft Apricot", "canonical": "#FFB38B", "tonalRamp": ["#2A1005", "#572714", "#824326", "#AD613C", "#D78057", "#F3A177", "#FFC5A6", "#FFF0E7"] },
+      "dark-on-secondary": { "role": "secondary", "displayName": "Apricot Ink", "canonical": "#542000", "tonalRamp": ["#200900", "#401600", "#642900", "#88420F", "#AC6130", "#CB885F", "#E5B59A", "#F8ECE4"] },
+      "dark-tertiary": { "role": "tertiary", "displayName": "Dark Timer Gold", "canonical": "#E5C76B", "tonalRamp": ["#241B00", "#493A05", "#6D5917", "#91782C", "#B69A46", "#D5BB63", "#E9D795", "#F9F1D6"] },
+      "dark-on-tertiary": { "role": "tertiary", "displayName": "Timer Ink", "canonical": "#3A3000", "tonalRamp": ["#191300", "#3A3000", "#5B4D0C", "#7D6C20", "#9F8C3C", "#C0AE62", "#DDD096", "#F7F1D8"] },
+      "dark-background": { "role": "neutral", "displayName": "Night Enamel", "canonical": "#061C14", "tonalRamp": ["#03110C", "#061C14", "#153D30", "#325F4F", "#598272", "#87A697", "#BACAC0", "#EDF3EF"] },
+      "dark-on-background": { "role": "neutral", "displayName": "Night Cream", "canonical": "#E5EFE8", "tonalRamp": ["#1D251F", "#3F4A42", "#647068", "#89978F", "#AFBDB4", "#CEDBD2", "#E5EFE8", "#F4F9F6"] },
+      "dark-surface": { "role": "neutral", "displayName": "Night Surface", "canonical": "#10271D", "tonalRamp": ["#07140D", "#10271D", "#25463A", "#436858", "#668B79", "#91AE9D", "#BDD0C5", "#EEF5F1"] },
+      "dark-surface-variant": { "role": "neutral", "displayName": "Night Surface Variant", "canonical": "#233A2E", "tonalRamp": ["#0A1710", "#182D22", "#233A2E", "#3D5B4A", "#60806C", "#8BA593", "#B8CABD", "#EDF3EF"] },
+      "dark-on-surface-variant": { "role": "neutral", "displayName": "Night Supporting Text", "canonical": "#C0CEC4", "tonalRamp": ["#18201A", "#36433A", "#55665A", "#758A7C", "#97AD9F", "#B5C8BB", "#D1DDD5", "#F1F6F2"] },
+      "dark-outline": { "role": "neutral", "displayName": "Night Outline", "canonical": "#82978A", "tonalRamp": ["#101A14", "#293A30", "#465A4D", "#637B6C", "#82978A", "#A2B5A8", "#C6D3CA", "#F0F5F1"] },
+      "dark-error": { "role": "neutral", "displayName": "Dark Error", "canonical": "#FFB4AB", "tonalRamp": ["#2A0906", "#571D18", "#83342E", "#AE5048", "#D36F66", "#EF978E", "#FFC1BA", "#FFF0ED"] },
+      "second-timer-orange": { "role": "tertiary", "displayName": "Second Timer Orange", "canonical": "#FF7A32", "tonalRamp": ["#2B0C00", "#5B1E00", "#893300", "#B94A08", "#E0641E", "#F58A4A", "#FFB88F", "#FFEBDD"] }
+    },
+    "typographyMeta": {
+      "display-large": { "displayName": "Display Large", "purpose": "Largest arm's-length action statement." },
+      "display-medium": { "displayName": "Display Medium", "purpose": "Primary screen and current-step headings." },
+      "headline-large": { "displayName": "Headline Large", "purpose": "Recipe identity and prominent tray headings." },
+      "headline-medium": { "displayName": "Headline Medium", "purpose": "Section and shelf headings." },
+      "title-large": { "displayName": "Title Large", "purpose": "Item names and compact hierarchy." },
+      "title-medium": { "displayName": "Title Medium", "purpose": "Timer labels and preview titles." },
+      "body-large": { "displayName": "Body Large", "purpose": "Cooking instructions and primary support copy." },
+      "body-medium": { "displayName": "Body Medium", "purpose": "Secondary information." },
+      "label-large": { "displayName": "Label Large", "purpose": "Chips, preview labels, and controls." }
+    },
+    "shadows": [
+      { "name": "bottom-action-tonal", "value": "4dp tonal elevation", "purpose": "The persistent recipe-detail action area only." }
+    ],
+    "motion": [
+      { "name": "destination-fade", "value": "fadeIn() togetherWith fadeOut()", "purpose": "Transition between app destinations without spatial disruption." }
+    ],
+    "breakpoints": [
+      { "name": "cooking-expanded", "value": "720dp" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Decisive Button",
+      "kind": "button",
+      "refersTo": "decisive-button",
+      "description": "The full-width forward action used to start or advance cooking.",
+      "html": "<button class=\"ds-decisive-button\">Done · next step</button>",
+      "css": ".ds-decisive-button { width: 100%; height: 60px; border: 0; border-radius: 30px; background: #C84F13; color: #F3F0E8; font: 600 15px/20px system-ui, sans-serif; padding: 0 24px; } .ds-decisive-button:hover { filter: brightness(1.06); } .ds-decisive-button:active { filter: brightness(.92); } .ds-decisive-button:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; }"
+    },
+    {
+      "name": "Current Step Tray",
+      "kind": "card",
+      "refersTo": "current-step-tray",
+      "description": "The dominant cream reading field for the current cooking instruction.",
+      "html": "<section class=\"ds-step-tray\"><span>Step 2 of 5</span><h2>Add the chicken</h2><p>Place the chicken in the tray with the potatoes.</p></section>",
+      "css": ".ds-step-tray { background: #F3F0E8; color: #083224; border-radius: 28px; padding: 22px; } .ds-step-tray span { font: 600 17px/23px system-ui, sans-serif; } .ds-step-tray h2 { margin: 10px 0; font: 600 52px/50px 'Barlow Condensed', system-ui, sans-serif; } .ds-step-tray p { margin: 0; font: 18px/26px system-ui, sans-serif; }"
+    },
+    {
+      "name": "Step Preview",
+      "kind": "custom",
+      "refersTo": "step-preview",
+      "description": "A compact previous, next, or then row that navigates steps without changing timers.",
+      "html": "<button class=\"ds-step-preview\"><span>Next · Step 3</span><strong>Add the broccoli</strong><b>→</b></button>",
+      "css": ".ds-step-preview { width: 100%; display: grid; grid-template-columns: 1fr auto; text-align: left; border: 0; border-radius: 18px; background: #F3F0E8; color: #083224; padding: 12px 16px; } .ds-step-preview span { grid-column: 1; color: #C84F13; font: 600 15px/20px system-ui, sans-serif; } .ds-step-preview strong { grid-column: 1; font: 600 17px/23px system-ui, sans-serif; } .ds-step-preview b { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 24px; } .ds-step-preview:hover { background: #E6DFD2; } .ds-step-preview:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; }"
+    },
+    {
+      "name": "Static Chip",
+      "kind": "chip",
+      "refersTo": "static-chip",
+      "description": "A compact equipment or recipe tag with a quiet material outline.",
+      "html": "<span class=\"ds-static-chip\">Kitchen equipment</span>",
+      "css": ".ds-static-chip { display: inline-flex; align-items: center; min-height: 36px; box-sizing: border-box; border: 1px solid #D1C3B0; border-radius: 10px; background: #F3F0E8; color: #083224; padding: 8px 12px; font: 600 15px/20px system-ui, sans-serif; }"
+    },
+    {
+      "name": "Portion Chip — Selected",
+      "kind": "chip",
+      "description": "The selected portion mode, using the same yellow as active timing.",
+      "html": "<button class=\"ds-portion-chip\">✓ Dinner + lunch tomorrow</button>",
+      "css": ".ds-portion-chip { min-height: 48px; border: 1px solid #D1C3B0; border-radius: 24px; background: #C9A442; color: #083224; padding: 0 16px; font: 600 15px/20px system-ui, sans-serif; } .ds-portion-chip:hover { filter: brightness(1.06); } .ds-portion-chip:active { filter: brightness(.92); } .ds-portion-chip:focus-visible { outline: 3px solid #C84F13; outline-offset: 3px; }"
+    },
+    {
+      "name": "Timer Control",
+      "kind": "custom",
+      "refersTo": "timer-control",
+      "description": "A tactile timer well with a large clock and two circular controls.",
+      "html": "<section class=\"ds-timer\"><div><span>Potatoes</span><strong>12:48</strong></div><button aria-label=\"Pause Potatoes\">Ⅱ</button><button aria-label=\"Add one minute\">＋</button></section>",
+      "css": ".ds-timer { display: flex; align-items: center; gap: 12px; border-radius: 22px; background: #083224; color: #C9A442; padding: 16px; } .ds-timer div { flex: 1; display: grid; } .ds-timer span { font: 600 17px/23px system-ui, sans-serif; } .ds-timer strong { font: 700 40px/1 system-ui, sans-serif; } .ds-timer button { width: 56px; height: 56px; border: 0; border-radius: 50%; background: #234633; color: #F3F0E8; font-size: 26px; } .ds-timer button:hover { background: #346A53; } .ds-timer button:active { transform: scale(.96); } .ds-timer button:focus-visible { outline: 3px solid #C9A442; outline-offset: 3px; }"
+    },
+    {
+      "name": "Hidden Navigation Drawer",
+      "kind": "nav",
+      "description": "The off-canvas Material destination list that preserves the cooking workspace.",
+      "html": "<nav class=\"ds-drawer\"><h2>MealOS</h2><a class=\"ds-drawer-active\" href=\"#\">Today</a><a href=\"#\">Plan</a><a href=\"#\">Recipes</a><a href=\"#\">Grocery</a></nav>",
+      "css": ".ds-drawer { width: 312px; min-height: 420px; box-sizing: border-box; background: #F3F0E8; color: #083224; padding: 24px 12px; } .ds-drawer h2 { margin: 12px; font: 600 38px/40px 'Barlow Condensed', system-ui, sans-serif; } .ds-drawer a { display: block; min-height: 48px; box-sizing: border-box; border-radius: 24px; color: #083224; padding: 14px 16px; text-decoration: none; font: 600 15px/20px system-ui, sans-serif; } .ds-drawer a:hover, .ds-drawer-active { background: #D1C3B0; } .ds-drawer a:focus-visible { outline: 3px solid #C9A442; outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Mise en Place Board",
+    "overview": "MealOS feels like a prepared kitchen station. Deep green enamel holds persistent working state while warm cream trays make instructions and ingredients immediately readable. Yellow is reserved for active timing, and burnt orange marks the decisive action that moves the cook forward.\n\nThe system is tactile, confident, and practical: large condensed action language, human-scale controls, generous working surfaces, and flat tonal layering that can survive a busy kitchen. It rejects generic dashboard grids and decorative food-blog styling; its identity comes from purposeful trays, shelves, rules, and controls rather than ornamental imagery.",
+    "keyCharacteristics": [
+      "Deep enamel workspace with warm cream prep surfaces.",
+      "Condensed, heavy action typography paired with calm Material body type.",
+      "Yellow timing state and burnt-orange completion state.",
+      "Large trays, compact rounded previews, pills, and circular controls.",
+      "Minimal shadow; depth comes primarily from tonal and material contrast."
+    ],
+    "rules": [
+      { "name": "The Two Warm Signals Rule", "body": "Yellow means timing or active progress; burnt orange means a decisive action. Do not swap their jobs.", "section": "colors" },
+      { "name": "The Cream Is for Reading Rule", "body": "Use cream as a prepared content field against enamel, not as a decorative accent scattered through the interface.", "section": "colors" },
+      { "name": "The Arm's-Length Rule", "body": "The current cooking action gets the display scale; supporting details stay in the Material hierarchy and must not compete with it.", "section": "typography" },
+      { "name": "The Enamel Layer Rule", "body": "Establish depth with adjacent tonal surfaces before adding elevation; never introduce glass, glow, or decorative drop-shadow stacks.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do preserve cream reading trays against the deep enamel station.",
+      "Do keep yellow tied to timing/progress and orange tied to decisive action.",
+      "Do reflow cooking mode from balanced panes to one column at the observed 720 dp threshold while preserving working state.",
+      "Do keep primary touch controls generous, with circular timer controls at 56 dp and standard Material icon targets elsewhere.",
+      "Do use Material 3 navigation, fields, chips, dialogs, and system Back behavior as the native interaction foundation."
+    ],
+    "donts": [
+      "Don't turn the interface into a generic dashboard or uniform card grid.",
+      "Don't use food-blog photography, bespoke recipe illustration, glass effects, or decorative shadow stacks as the system's identity.",
+      "Don't add a permanently visible navigation rail; protect the unfolded cooking workspace with the hidden drawer.",
+      "Don't shrink instructions into label-sized type or let secondary controls compete with the current cooking action."
+    ]
+  }
+}

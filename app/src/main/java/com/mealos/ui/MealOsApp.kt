@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -171,7 +172,11 @@ fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
     var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
 
     BackHandler(route !is Route.Main || (route as? Route.Main)?.destination != Destination.TODAY) {
-        route = Route.Main(Destination.TODAY)
+        route = when (val current = route) {
+            is Route.Cooking -> Route.Detail(current.recipeId)
+            is Route.Detail -> Route.Main(Destination.RECIPES)
+            is Route.Main -> Route.Main(Destination.TODAY)
+        }
     }
 
     ModalNavigationDrawer(
@@ -232,6 +237,7 @@ fun MealOsApp(viewModel: MealOsViewModel, fold: FoldingFeature?) {
                     recipe = RecipeCatalog.recipe(currentRoute.recipeId) ?: RecipeCatalog.recipes.first(),
                     portion = currentRoute.portion,
                     timers = timers.values.toList(),
+                    pantry = userState.pantry,
                     viewModel = viewModel,
                     fold = fold,
                     onBack = { route = Route.Detail(currentRoute.recipeId) },
@@ -546,7 +552,7 @@ private fun RecipeDetail(
             item {
                 Text(recipe.name, style = MaterialTheme.typography.displayMedium)
                 Text("${recipe.effortMinutes} min hands-on · ${recipe.totalMinutes} min total", style = MaterialTheme.typography.bodyLarge)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { recipe.tags.forEach { AssistChip(onClick = {}, label = { Text(it) }) } }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { recipe.tags.forEach { StaticChip(it) } }
             }
             item {
                 Text("How much?", style = MaterialTheme.typography.headlineMedium)
@@ -606,6 +612,7 @@ private fun CookingMode(
     recipe: Recipe,
     portion: PortionMode,
     timers: List<CookingTimer>,
+    pantry: Set<String>,
     viewModel: MealOsViewModel,
     fold: FoldingFeature?,
     onBack: () -> Unit,
@@ -614,19 +621,21 @@ private fun CookingMode(
     var stepIndex by rememberSaveable(recipe.id) { mutableIntStateOf(0) }
     val step = recipe.steps[stepIndex]
     val density = LocalDensity.current
+    val stepScroll = rememberScrollState()
+    val workspaceScroll = rememberScrollState()
     val hingeWidth = with(density) { if (fold?.isSeparating == true) fold.bounds.width().toDp().coerceAtLeast(8.dp) else 8.dp }
     BoxWithConstraints(Modifier.fillMaxSize().background(Enamel).safeDrawingPadding()) {
         val expanded = maxWidth >= 720.dp
         if (expanded) {
             Row(Modifier.fillMaxSize()) {
-                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.weight(1f))
+                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.weight(1f).verticalScroll(stepScroll))
                 Spacer(Modifier.width(hingeWidth).fillMaxHeight().background(Color(0xFF41573B)))
-                WorkspacePane(recipe, portion, timers, viewModel, Modifier.weight(1f))
+                WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.weight(1f).verticalScroll(workspaceScroll))
             }
         } else {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 20.dp)) {
-                item { StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.fillMaxWidth()) }
-                item { WorkspacePane(recipe, portion, timers, viewModel, Modifier.fillMaxWidth()) }
+            Column(Modifier.fillMaxSize().verticalScroll(stepScroll).padding(bottom = 20.dp)) {
+                StepPane(recipe, portion, stepIndex, onStep = { stepIndex = it }, onBack, onMenu, onAddTimer = { seconds -> viewModel.addTimer(timerLabel(step.title), seconds) }, Modifier.fillMaxWidth())
+                WorkspacePane(recipe, portion, timers, pantry, viewModel, Modifier.fillMaxWidth())
             }
         }
     }
@@ -659,26 +668,13 @@ private fun StepPane(
                 Text("Step ${stepIndex + 1} of ${recipe.steps.size}", style = MaterialTheme.typography.titleMedium)
                 Text(current.title, style = MaterialTheme.typography.displayMedium)
                 Text(current.instruction, style = MaterialTheme.typography.bodyLarge)
-                AssistChip(
-                    onClick = {},
-                    label = { Text(current.equipment) },
-                    leadingIcon = { Icon(Icons.Default.Kitchen, contentDescription = null) },
-                    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
-                        containerColor = Cream,
-                        labelColor = Enamel,
-                        leadingIconContentColor = Enamel
-                    ),
-                    border = androidx.compose.material3.AssistChipDefaults.assistChipBorder(
-                        enabled = true,
-                        borderColor = WarmLine
-                    )
-                )
+                StaticChip(current.equipment, Icons.Default.Kitchen)
                 current.tip?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold) }
                 current.timerSeconds?.let { seconds ->
                     FilledTonalButton(
                         onClick = { onAddTimer(seconds) },
                         colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
-                            containerColor = Color(0xFFE6DDF7),
+                            containerColor = TimerYellow.copy(alpha = 0.24f),
                             contentColor = Enamel
                         )
                     ) {
@@ -711,7 +707,7 @@ private fun StepPane(
 }
 
 @Composable
-private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<CookingTimer>, viewModel: MealOsViewModel, modifier: Modifier = Modifier) {
+private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<CookingTimer>, pantry: Set<String>, viewModel: MealOsViewModel, modifier: Modifier = Modifier) {
     Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(color = Cream, contentColor = Enamel, shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(vertical = 12.dp)) {
@@ -719,6 +715,7 @@ private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<Coo
                 recipe.ingredients.forEach { ingredient ->
                     ListItem(
                         headlineContent = { Text(ingredient.name, color = Enamel, fontWeight = FontWeight.SemiBold) },
+                        supportingContent = { if (ingredient.id in pantry) Text("Pantry staple", color = ActionOrange) },
                         leadingContent = { CategoryIcon(ingredient.category, tint = Enamel) },
                         trailingContent = { Text(scaledAmount(ingredient, recipe, portion), color = Enamel) },
                         colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Cream)
@@ -727,6 +724,25 @@ private fun WorkspacePane(recipe: Recipe, portion: PortionMode, timers: List<Coo
             }
         }
         TimerShelf(timers, viewModel)
+    }
+}
+
+@Composable
+private fun StaticChip(label: String, icon: ImageVector? = null) {
+    Surface(
+        color = Cream,
+        contentColor = Enamel,
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, WarmLine)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            icon?.let { Icon(it, contentDescription = null, modifier = Modifier.size(18.dp)) }
+            Text(label, style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
@@ -799,7 +815,16 @@ private fun PortionSelector(selected: PortionMode, onSelect: (PortionMode) -> Un
             AssistChip(
                 onClick = { onSelect(mode) },
                 label = { Text(mode.label) },
-                leadingIcon = { Icon(if (selected == mode) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, contentDescription = null) }
+                leadingIcon = { Icon(if (selected == mode) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked, contentDescription = null) },
+                colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
+                    containerColor = if (selected == mode) TimerYellow else Enamel,
+                    labelColor = if (selected == mode) Enamel else Cream,
+                    leadingIconContentColor = if (selected == mode) Enamel else Cream
+                ),
+                border = androidx.compose.material3.AssistChipDefaults.assistChipBorder(
+                    enabled = true,
+                    borderColor = WarmLine
+                )
             )
         }
     }
