@@ -3,6 +3,7 @@ package com.mealos.data
 import android.content.Context
 import com.mealos.model.ChatRole
 import com.mealos.model.RecipeAssistantState
+import com.mealos.model.RecipeAssistantModel
 import com.mealos.model.RecipeChatMessage
 import com.mealos.model.RecipeSource
 import org.json.JSONArray
@@ -34,7 +35,9 @@ class RecipeAssistantStore(context: Context) {
                 RecipeSource(it.optString("title"), it.optString("url"))
             } }
         }.orEmpty()
-        RecipeAssistantState(messages = messages, draft = draft, questions = questions, sources = sources)
+        val model = runCatching { RecipeAssistantModel.valueOf(root.optString("model")) }
+            .getOrDefault(RecipeAssistantModel.SONNET)
+        RecipeAssistantState(messages = messages, draft = draft, questions = questions, sources = sources, model = model)
     }.getOrDefault(RecipeAssistantState())
 
     fun save(state: RecipeAssistantState) {
@@ -53,6 +56,7 @@ class RecipeAssistantStore(context: Context) {
             put("sources", JSONArray().apply { state.sources.forEach { source ->
                 put(JSONObject().put("title", source.title).put("url", source.url))
             } })
+            put("model", state.model.name)
         }
         preferences.edit().putString(KEY, root.toString()).apply()
     }

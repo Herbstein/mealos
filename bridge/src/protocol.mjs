@@ -1,8 +1,10 @@
 export const MAX_REQUEST_BYTES = 256_000;
 export const MAX_MESSAGES = 30;
+export const ALLOWED_MODELS = new Set(["sonnet", "opus", "claude-haiku-4-5"]);
 
 export function validateRequest(value) {
   if (!value || typeof value !== "object") return "Request body must be a JSON object.";
+  if (value.model !== undefined && !ALLOWED_MODELS.has(value.model)) return "Choose a supported recipe assistant model.";
   if (!Array.isArray(value.messages) || value.messages.length === 0) return "At least one message is required.";
   if (value.messages.length > MAX_MESSAGES) return `Keep the conversation to ${MAX_MESSAGES} messages or fewer.`;
   for (const message of value.messages) {
@@ -12,6 +14,10 @@ export function validateRequest(value) {
     }
   }
   return null;
+}
+
+export function requestModel(value) {
+  return value?.model || "sonnet";
 }
 
 export function buildPrompt(messages) {

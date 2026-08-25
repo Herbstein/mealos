@@ -6,12 +6,12 @@ const BLOCKED_TOOLS = [
   "NotebookEdit", "Read", "Skill", "SlashCommand", "Task", "TodoWrite", "WebFetch", "Write"
 ];
 
-export async function runRecipeAgent(messages, signal) {
+export async function runRecipeAgent(messages, model, signal) {
   let resultText = null;
   const stream = query({
     prompt: buildPrompt(messages),
     options: {
-      model: process.env.CLAUDE_MODEL || "sonnet",
+      model,
       maxTurns: 8,
       tools: ["WebSearch"],
       allowedTools: ["WebSearch"],

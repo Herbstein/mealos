@@ -3,6 +3,7 @@ package com.mealos.data
 import com.mealos.BuildConfig
 import com.mealos.model.ChatRole
 import com.mealos.model.RecipeChatMessage
+import com.mealos.model.RecipeAssistantModel
 import com.mealos.model.RecipeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,7 +23,10 @@ class RecipeAssistantClient(
     private val baseUrl: String = BuildConfig.RECIPE_BRIDGE_URL,
     private val token: String = BuildConfig.RECIPE_BRIDGE_TOKEN
 ) {
-    suspend fun chat(messages: List<RecipeChatMessage>): RecipeAssistantResponse = withContext(Dispatchers.IO) {
+    suspend fun chat(
+        messages: List<RecipeChatMessage>,
+        model: RecipeAssistantModel
+    ): RecipeAssistantResponse = withContext(Dispatchers.IO) {
         check(baseUrl.isNotBlank() && token.isNotBlank()) {
             "Recipe Assistant has not been connected yet. Add the Railway address and MealOS token to the app build."
         }
@@ -36,7 +40,7 @@ class RecipeAssistantClient(
             setRequestProperty("Accept", "application/json")
         }
         try {
-            val request = JSONObject().put("messages", JSONArray().apply {
+            val request = JSONObject().put("model", model.requestValue).put("messages", JSONArray().apply {
                 recentMessagesForRequest(messages).forEach { message ->
                     put(JSONObject().apply {
                         put("role", if (message.role == ChatRole.USER) "user" else "assistant")

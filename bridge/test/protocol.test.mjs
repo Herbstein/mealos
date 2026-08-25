@@ -1,11 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildPrompt, normalizeAgentResult, validateRequest } from "../src/protocol.mjs";
+import { buildPrompt, normalizeAgentResult, requestModel, validateRequest } from "../src/protocol.mjs";
 
 test("validates a compact conversation", () => {
   assert.equal(validateRequest({ messages: [{ role: "user", content: "Make dinner" }] }), null);
   assert.match(validateRequest({ messages: [] }), /one message/i);
   assert.match(validateRequest({ messages: [{ role: "system", content: "no" }] }), /valid role/i);
+  assert.equal(validateRequest({ model: "opus", messages: [{ role: "user", content: "Make dinner" }] }), null);
+  assert.match(validateRequest({ model: "anything", messages: [{ role: "user", content: "Make dinner" }] }), /supported/i);
+  assert.equal(requestModel({ messages: [] }), "sonnet");
+  assert.equal(requestModel({ model: "claude-haiku-4-5" }), "claude-haiku-4-5");
 });
 
 test("prompt carries the conversation and product constraints", () => {

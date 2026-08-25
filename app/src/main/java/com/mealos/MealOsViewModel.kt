@@ -19,6 +19,7 @@ import com.mealos.model.RecipeOrigin
 import com.mealos.model.RecipeStep
 import com.mealos.model.ChatRole
 import com.mealos.model.RecipeAssistantState
+import com.mealos.model.RecipeAssistantModel
 import com.mealos.model.RecipeChatMessage
 import com.mealos.timer.TimerNotifications
 import com.mealos.timer.TimerStore
@@ -162,11 +163,18 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         requestAssistantResponse()
     }
 
+    fun setAssistantModel(model: RecipeAssistantModel) {
+        if (_assistantState.value.sending) return
+        mutateAssistant { it.copy(model = model, error = null) }
+    }
+
     fun clearAssistantChat() {
+        val model = _assistantState.value.model
         assistantRequestJob?.cancel()
         assistantRequestJob = null
         assistantStore.clear()
-        _assistantState.value = RecipeAssistantState()
+        _assistantState.value = RecipeAssistantState(model = model)
+        assistantStore.save(_assistantState.value)
     }
 
     fun reviewAssistantDraft() {
@@ -241,9 +249,10 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     private fun requestAssistantResponse() {
         val messages = _assistantState.value.messages
+        val model = _assistantState.value.model
         assistantRequestJob?.cancel()
         assistantRequestJob = viewModelScope.launch {
-            runCatching { assistantClient.chat(messages) }
+            runCatching { assistantClient.chat(messages, model) }
                 .onSuccess { response ->
                     val assistantMessage = RecipeChatMessage(role = ChatRole.ASSISTANT, content = response.reply)
                     mutateAssistant { current -> current.copy(

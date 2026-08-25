@@ -88,6 +88,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -152,6 +154,7 @@ import com.mealos.model.MealOsUserState
 import com.mealos.model.PlanEntry
 import com.mealos.model.PortionMode
 import com.mealos.model.Recipe
+import com.mealos.model.RecipeAssistantModel
 import com.mealos.model.scaledAmount
 import com.mealos.ui.theme.ActionOrange
 import com.mealos.ui.theme.Cream
@@ -404,6 +407,15 @@ private fun MainDestination(
             TopAppBar(
                 title = { Text(if (destination == Destination.TODAY) "MealOS" else destination.label) },
                 navigationIcon = { IconButton(onClick = onMenu) { Icon(Icons.Default.Menu, contentDescription = "Open navigation") } },
+                actions = {
+                    if (destination == Destination.ASSISTANT) {
+                        AssistantModelMenu(
+                            selected = assistantState.model,
+                            enabled = !assistantState.sending,
+                            onSelect = viewModel::setAssistantModel
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = if (destination == Destination.ASSISTANT) Enamel else MaterialTheme.colorScheme.background,
                     titleContentColor = if (destination == Destination.ASSISTANT) Cream else MaterialTheme.colorScheme.onBackground,
@@ -432,6 +444,55 @@ private fun MainDestination(
                     onReviewDraft = viewModel::reviewAssistantDraft
                 )
                 Destination.PANTRY -> PantryScreen(state, recipes, viewModel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssistantModelMenu(
+    selected: RecipeAssistantModel,
+    enabled: Boolean,
+    onSelect: (RecipeAssistantModel) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(
+            onClick = { expanded = true },
+            enabled = enabled,
+            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                contentColor = TimerYellow,
+                disabledContentColor = Cream.copy(alpha = 0.52f)
+            ),
+            modifier = Modifier.semantics {
+                contentDescription = "Recipe model, ${selected.label}"
+            }
+        ) {
+            Text(selected.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Icon(Icons.Default.ExpandMore, contentDescription = null, modifier = Modifier.size(18.dp))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            RecipeAssistantModel.entries.forEach { model ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(model.label, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                model.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    leadingIcon = {
+                        if (model == selected) Icon(Icons.Default.Check, contentDescription = "Selected")
+                        else Spacer(Modifier.size(24.dp))
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelect(model)
+                    }
+                )
             }
         }
     }

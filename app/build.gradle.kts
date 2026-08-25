@@ -24,8 +24,8 @@ android {
         applicationId = "com.mealos"
         minSdk = 26
         targetSdk = 37
-        versionCode = providers.environmentVariable("MEALOS_VERSION_CODE").orNull?.toIntOrNull() ?: 4_000
-        versionName = providers.environmentVariable("MEALOS_VERSION_NAME").orNull ?: "0.4.0"
+        versionCode = providers.environmentVariable("MEALOS_VERSION_CODE").orNull?.toIntOrNull() ?: 5_000
+        versionName = providers.environmentVariable("MEALOS_VERSION_NAME").orNull ?: "0.5.0"
         buildConfigField("String", "RECIPE_BRIDGE_URL", "\"${recipeBridgeUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "RECIPE_BRIDGE_TOKEN", "\"${recipeBridgeToken.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

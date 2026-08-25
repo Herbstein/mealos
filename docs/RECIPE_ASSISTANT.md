@@ -1,6 +1,6 @@
 # Recipe Assistant setup
 
-MealOS 0.4 adds a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, and the current draft are stored on the Android device. The Railway service is a stateless request gateway.
+MealOS 0.5 adds a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway.
 
 ## Railway service
 
@@ -10,15 +10,16 @@ Set these Railway variables:
 
 - `CLAUDE_CODE_OAUTH_TOKEN`: the Claude Code credential used by the Agent SDK.
 - `MEALOS_BRIDGE_TOKEN`: a separate, long random value used to authorize the private APK.
-- `CLAUDE_MODEL`: optional; defaults to `sonnet`.
 
 Set the health check path to `/health`. After deployment, verify that it returns `{ "ok": true }`. Do not expose Railway logs containing request bodies or either token.
 
 The agent receives only the `WebSearch` tool. Shell, filesystem, editing, subagent, and fetch tools are explicitly blocked. Search is used when current food-safety, appliance, or timing facts need verification.
 
+The Assistant header offers Sonnet (default), Opus, and Haiku. The choice applies to the next reply and survives a new chat or app restart. The gateway validates its fixed allowlist before invoking the Agent SDK; arbitrary model identifiers from a modified client are rejected.
+
 ## Android release
 
-Add two private GitHub Actions secrets before tagging 0.4.0:
+Add two private GitHub Actions secrets before tagging 0.5.0:
 
 - `MEALOS_BRIDGE_URL`: the public Railway service URL, without `/v1/recipe-chat`.
 - `MEALOS_BRIDGE_TOKEN`: the same random gateway value configured in Railway.

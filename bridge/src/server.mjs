@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { timingSafeEqual } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { runRecipeAgent } from "./agent.mjs";
-import { MAX_REQUEST_BYTES, validateRequest } from "./protocol.mjs";
+import { MAX_REQUEST_BYTES, requestModel, validateRequest } from "./protocol.mjs";
 
 export function createMealOsServer({ token = process.env.MEALOS_BRIDGE_TOKEN, runAgent = runRecipeAgent } = {}) {
   if (!token) throw new Error("MEALOS_BRIDGE_TOKEN is required.");
@@ -35,7 +35,7 @@ export function createMealOsServer({ token = process.env.MEALOS_BRIDGE_TOKEN, ru
         if (!response.writableEnded) controller.abort();
       });
       try {
-        return send(response, 200, await runAgent(body.messages, controller.signal));
+        return send(response, 200, await runAgent(body.messages, requestModel(body), controller.signal));
       } finally {
         clearTimeout(timeout);
       }

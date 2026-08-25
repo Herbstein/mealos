@@ -21,8 +21,8 @@ MealOS publishes private, signed APK releases from GitHub tags. The release sign
 To publish an update (use the next semantic version):
 
 ```sh
-git tag v0.4.0
-git push origin v0.4.0
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 The `Release MealOS` workflow tests the app, derives a monotonically increasing Android version code from the tag, builds the signed APK, and attaches it to the matching private GitHub Release.
@@ -44,6 +44,7 @@ The first signed release cannot update a debug-signed installation. Uninstall th
 - Versioned `.mealosrecipe` files that can be shared to or opened with MealOS for review before saving
 - A built-in ChatGPT recipe prompt; copied recipes remain local and require no in-app AI subscription
 - A native, locally persisted Recipe Assistant with a stateless Railway request gateway
+- A locally remembered Sonnet, Opus, or Haiku selector with a server-side model allowlist
 - Printed-recipe and gallery import through ML Kit document scanning and on-device OCR
 - Core recipes remain structured in `RecipeCatalog.kt`; personal and imported recipes persist locally through the same simple model
 
