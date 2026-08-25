@@ -5,11 +5,15 @@ import { verifyFirebaseIdToken } from "./firebase-auth.mjs";
 import { MAX_REQUEST_BYTES, requestModel, validateRequest } from "./protocol.mjs";
 
 export function createMealOsServer({
+  allowedUids = process.env.MEALOS_ALLOWED_FIREBASE_UIDS,
   allowedUid = process.env.MEALOS_ALLOWED_FIREBASE_UID,
   verifyToken = verifyFirebaseIdToken,
   runAgent = runRecipeAgent
 } = {}) {
-  if (!allowedUid) throw new Error("MEALOS_ALLOWED_FIREBASE_UID is required.");
+  const uidAllowlist = parseAllowedUids(allowedUids, allowedUid);
+  if (uidAllowlist.size === 0) {
+    throw new Error("MEALOS_ALLOWED_FIREBASE_UIDS is required.");
+  }
   let activeRequests = 0;
   let recentRequests = [];
   return createServer(async (request, response) => {
@@ -18,7 +22,7 @@ export function createMealOsServer({
 
     if (request.method === "GET" && request.url === "/health") return send(response, 200, { ok: true });
     if (request.method !== "POST" || request.url !== "/v1/recipe-chat") return send(response, 404, { error: "Not found." });
-    const authorization = await authorize(request.headers.authorization, allowedUid, verifyToken);
+    const authorization = await authorize(request.headers.authorization, uidAllowlist, verifyToken);
     if (!authorization.ok) return send(response, authorization.status, { error: authorization.error });
     const now = Date.now();
     recentRequests = recentRequests.filter(timestamp => now - timestamp < 60_000);
@@ -54,13 +58,22 @@ export function createMealOsServer({
   });
 }
 
-async function authorize(header, allowedUid, verifyToken) {
+export function parseAllowedUids(...values) {
+  return new Set(values.flatMap(value => {
+    if (value == null) return [];
+    if (typeof value === "string") return value.split(",");
+    if (Symbol.iterator in Object(value)) return [...value];
+    return [];
+  }).map(value => String(value).trim()).filter(Boolean));
+}
+
+async function authorize(header, allowedUids, verifyToken) {
   if (!header?.startsWith("Bearer ") || header.length <= 7) {
     return { ok: false, status: 401, error: "Sign in with Google to continue." };
   }
   try {
     const identity = await verifyToken(header.slice(7));
-    if (identity.uid !== allowedUid) {
+    if (!allowedUids.has(identity.uid)) {
       return { ok: false, status: 403, error: "This Google account is not allowed to use MealOS Recipe Assistant." };
     }
     return { ok: true, identity };

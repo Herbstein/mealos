@@ -8,25 +8,27 @@ The Android app is registered as `com.mealos` in Firebase project `mealos-af8fc`
 
 Create a Cloud Firestore Standard database. Use production mode and choose the region deliberately; the database location cannot be changed later. The checked-in `google-services.json` contains public Firebase application identifiers, not a service credential.
 
-## First owner sign-in
+## Approving users
 
-Install a build, open the navigation drawer, and choose **Sign in with Google**. In Firebase Console, open **Authentication → Users** and copy that account's UID.
-
-Replace `REPLACE_WITH_FIREBASE_OWNER_UID` in `firestore.rules` with the copied UID, then deploy the rules:
+Deploy the checked-in rules once:
 
 ```sh
 firebase use mealos-af8fc
 firebase deploy --only firestore:rules
 ```
 
-The rules allow only that owner UID to access `/users/{uid}/mealos/*`, validate the synchronized document shape, and reject deletes. Until the placeholder is replaced and deployed, sign-in succeeds but cloud sync correctly reports that it needs attention; use **Retry sync** afterward.
+Install a build and choose **Sign in with Google**. In Firebase Console, open **Authentication → Users** and copy the account's UID. Then open **Firestore Database → Data**, create a top-level collection named `mealosAccess`, and create a document whose document ID is that exact UID. Add one Boolean field named `enabled` with the value `true`.
+
+Repeat only the access-document step for each approved friend. The rules do not need to be redeployed when the allowlist changes. Setting `enabled` to `false` or deleting the access document revokes cloud sync. Clients cannot list, read, or edit the access collection; it is managed through the Firebase Console or an administrative service.
+
+Each approved account can access only its own `/users/{uid}/mealos/*` documents. The rules also validate the synchronized document shape and reject client deletes. Before approval, Google sign-in succeeds but cloud sync reports that it needs attention; use **Retry sync** after adding the access document.
 
 Set these Railway variables:
 
 - `FIREBASE_PROJECT_ID=mealos-af8fc`
-- `MEALOS_ALLOWED_FIREBASE_UID=<copied UID>`
+- `MEALOS_ALLOWED_FIREBASE_UIDS=<UID 1>,<UID 2>,<UID 3>`
 
-Redeploy Railway. Firestore data remains isolated by the signed-in UID, while Railway additionally rejects every UID except the configured owner.
+Redeploy Railway after changing its list. Firestore and Railway have separate authorization boundaries, so an approved user must appear in both allowlists to use both cloud sync and Recipe Assistant. The old singular `MEALOS_ALLOWED_FIREBASE_UID` variable remains supported while migrating, but should be removed after the plural variable is configured.
 
 ## Sync behavior
 

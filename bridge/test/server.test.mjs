@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createMealOsServer } from "../src/server.mjs";
+import { createMealOsServer, parseAllowedUids } from "../src/server.mjs";
 
 async function withServer(run) {
   const server = createMealOsServer({
@@ -33,6 +33,33 @@ test("chat returns a stateless agent response", () => withServer(async base => {
   assert.equal((await response.json()).reply, "Ready");
 }));
 
+test("parses, trims, and deduplicates a UID allowlist", () => {
+  assert.deepEqual([...parseAllowedUids("owner-uid, friend-uid,owner-uid", [" third-uid "])], [
+    "owner-uid",
+    "friend-uid",
+    "third-uid"
+  ]);
+});
+
+test("allows every Firebase user in the configured allowlist", async () => {
+  const server = createMealOsServer({
+    allowedUids: "owner-uid,friend-uid",
+    verifyToken: async () => ({ uid: "friend-uid" }),
+    runAgent: async () => ({ reply: "Ready", questions: [], sources: [], recipeDocument: null })
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/recipe-chat`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-token", "content-type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: "Make dinner" }] })
+    });
+    assert.equal(response.status, 200);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
 test("passes only an allowed model to the agent", async () => {
   let receivedModel;
   const server = createMealOsServer({
@@ -64,7 +91,7 @@ test("passes only an allowed model to the agent", async () => {
   }
 });
 
-test("rejects a valid Firebase user who is not the MealOS owner", async () => {
+test("rejects a valid Firebase user who is not on the allowlist", async () => {
   const server = createMealOsServer({
     allowedUid: "owner-uid",
     verifyToken: async () => ({ uid: "someone-else" }),
