@@ -16,7 +16,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      MEALOS_KEYSTORE_PATH: ${{ runner.temp }}/mealos-release.jks
       MEALOS_KEYSTORE_PASSWORD: ${{ secrets.MEALOS_KEYSTORE_PASSWORD }}
       MEALOS_KEY_ALIAS: ${{ secrets.MEALOS_KEY_ALIAS }}
       MEALOS_KEY_PASSWORD: ${{ secrets.MEALOS_KEY_PASSWORD }}
@@ -53,6 +52,7 @@ jobs:
           fi
           echo "MEALOS_VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
           echo "MEALOS_VERSION_CODE=$((major * 1000000 + minor * 1000 + patch))" >> "$GITHUB_ENV"
+          echo "MEALOS_KEYSTORE_PATH=$RUNNER_TEMP/mealos-release.jks" >> "$GITHUB_ENV"
           echo "MEALOS_RELEASE_APK=$RUNNER_TEMP/MealOS-${GITHUB_REF_NAME#v}.apk" >> "$GITHUB_ENV"
 
       - name: Restore release signing key
