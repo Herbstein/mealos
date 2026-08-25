@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -87,7 +88,9 @@ fun RecipeAssistantScreen(
     onSend: (String) -> Unit,
     onRetry: () -> Unit,
     onClear: () -> Unit,
-    onReviewDraft: () -> Unit
+    onReviewDraft: () -> Unit,
+    signedIn: Boolean,
+    onSignIn: () -> Unit
 ) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val twoPane = maxWidth >= 720.dp
@@ -101,6 +104,8 @@ fun RecipeAssistantScreen(
                     onClear = onClear,
                     compactDraft = false,
                     onReviewDraft = onReviewDraft,
+                    signedIn = signedIn,
+                    onSignIn = onSignIn,
                     modifier = Modifier.weight(1f).fillMaxHeight()
                 )
                 val hinge = if (fold?.isSeparating == true) 8.dp else 2.dp
@@ -120,6 +125,8 @@ fun RecipeAssistantScreen(
                 onClear = onClear,
                 compactDraft = true,
                 onReviewDraft = onReviewDraft,
+                signedIn = signedIn,
+                onSignIn = onSignIn,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -135,11 +142,13 @@ private fun ChatPane(
     onClear: () -> Unit,
     compactDraft: Boolean,
     onReviewDraft: () -> Unit,
+    signedIn: Boolean,
+    onSignIn: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var input by remember { mutableStateOf("") }
     var confirmClear by remember { mutableStateOf(false) }
-    val canSend = input.isNotBlank() && !state.sending
+    val canSend = input.isNotBlank() && !state.sending && signedIn
     val listState = rememberLazyListState()
     LaunchedEffect(state.messages.size, state.sending, state.draft?.id) {
         val extras = if (compactDraft && state.draft != null) 1 else 0
@@ -192,6 +201,23 @@ private fun ChatPane(
                 Row(Modifier.padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(error, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onErrorContainer)
                     TextButton(onClick = onRetry) { Icon(Icons.Default.Refresh, null); Text("Retry") }
+                }
+            }
+        }
+        if (!signedIn) {
+            Surface(color = RaisedEnamel, contentColor = Cream, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CloudOff, contentDescription = null, tint = TimerYellow)
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        "Sign in to ask MealOS. Planning and saved recipes still work offline.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(onClick = onSignIn) { Text("Sign in", color = TimerYellow) }
                 }
             }
         }

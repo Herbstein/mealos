@@ -13,6 +13,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.viewModels
+import androidx.credentials.ClearCredentialStateRequest
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -20,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowInfoTracker
 import com.mealos.ui.MealOsApp
@@ -31,9 +37,19 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.android.gms.tasks.Task
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MealOsViewModel by viewModels()
+    private val credentialManager by lazy { CredentialManager.create(this) }
     private var timerAlertsAvailable by mutableStateOf(false)
     private var preciseTimersAvailable by mutableStateOf(false)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -68,7 +84,9 @@ class MainActivity : ComponentActivity() {
                     preciseTimersAvailable = preciseTimersAvailable,
                     onEnableTimerAlerts = ::enableTimerAlerts,
                     onEnablePreciseTimers = ::enablePreciseTimers,
-                    onScanRecipe = ::scanRecipe
+                    onScanRecipe = ::scanRecipe,
+                    onSignIn = ::signInWithGoogle,
+                    onSignOut = ::signOut
                 )
             }
         }
@@ -127,6 +145,46 @@ class MainActivity : ComponentActivity() {
             }
     }
 
+    private fun signInWithGoogle() {
+        viewModel.beginGoogleSignIn()
+        lifecycleScope.launch {
+            runCatching {
+                val googleOption = GetGoogleIdOption.Builder()
+                    .setServerClientId(getString(R.string.default_web_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .setAutoSelectEnabled(true)
+                    .build()
+                val result = credentialManager.getCredential(
+                    context = this@MainActivity,
+                    request = GetCredentialRequest.Builder().addCredentialOption(googleOption).build()
+                )
+                val credential = result.credential as? CustomCredential
+                    ?: error("Google did not return a usable account credential.")
+                check(credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    "Google returned an unsupported account credential."
+                }
+                val google = GoogleIdTokenCredential.createFrom(credential.data)
+                FirebaseAuth.getInstance()
+                    .signInWithCredential(GoogleAuthProvider.getCredential(google.idToken, null))
+                    .awaitFirebase()
+            }.onSuccess {
+                viewModel.finishGoogleSignIn()
+            }.onFailure { error ->
+                viewModel.finishGoogleSignIn(
+                    if (error is GetCredentialCancellationException) null
+                    else error.message ?: "Google sign-in could not be completed. Try again."
+                )
+            }
+        }
+    }
+
+    private fun signOut() {
+        viewModel.signOut()
+        lifecycleScope.launch {
+            runCatching { credentialManager.clearCredentialState(ClearCredentialStateRequest()) }
+        }
+    }
+
     private fun recognizeRecipePages(pages: List<Uri>) {
         val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         val text = mutableListOf<String>()
@@ -179,4 +237,10 @@ class MainActivity : ComponentActivity() {
     } else {
         getParcelableExtra(Intent.EXTRA_STREAM)
     }
+}
+
+private suspend fun <T> Task<T>.awaitFirebase(): T = suspendCancellableCoroutine { continuation ->
+    addOnSuccessListener { if (continuation.isActive) continuation.resume(it) }
+    addOnFailureListener { if (continuation.isActive) continuation.resumeWithException(it) }
+    addOnCanceledListener { continuation.cancel() }
 }

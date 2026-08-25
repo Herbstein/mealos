@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "646428274747",
+    "project_id": "mealos-af8fc",
+    "storage_bucket": "mealos-af8fc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:646428274747:android:ed9c8b4d31891569406c1e",
+        "android_client_info": {
+          "package_name": "com.mealos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "646428274747-b1luvtfn1745jvkj6p1gf5babusu9pb2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mealos",
+            "certificate_hash": "aa60297d84942615d7b58e97f2f0e4df6be4148f"
+          }
+        },
+        {
+          "client_id": "646428274747-l7o5da9fhqn05896qtekrnpl6nar577a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mealos",
+            "certificate_hash": "732dce43c9c8683237fa516820764f482df67357"
+          }
+        },
+        {
+          "client_id": "646428274747-ppn95e9ravdol0btacl2s0g34f5gv6t1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnFZwP_PDtO5fZgf3erpdNnLdTwtqUFbE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "646428274747-ppn95e9ravdol0btacl2s0g34f5gv6t1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,15 +21,16 @@ data class RecipeAssistantResponse(
 
 class RecipeAssistantClient(
     private val baseUrl: String = BuildConfig.RECIPE_BRIDGE_URL,
-    private val token: String = BuildConfig.RECIPE_BRIDGE_TOKEN
+    private val idTokenProvider: suspend () -> String = FirebaseIdTokenProvider::get
 ) {
     suspend fun chat(
         messages: List<RecipeChatMessage>,
         model: RecipeAssistantModel
     ): RecipeAssistantResponse = withContext(Dispatchers.IO) {
-        check(baseUrl.isNotBlank() && token.isNotBlank()) {
-            "Recipe Assistant has not been connected yet. Add the Railway address and MealOS token to the app build."
+        check(baseUrl.isNotBlank()) {
+            "Recipe Assistant has not been connected yet. Add the Railway address to the app build."
         }
+        val token = idTokenProvider()
         val connection = (URL("${baseUrl.trimEnd('/')}/v1/recipe-chat").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 20_000

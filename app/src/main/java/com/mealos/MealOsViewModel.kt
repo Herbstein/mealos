@@ -3,6 +3,8 @@ package com.mealos
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.mealos.data.RecipeCatalog
 import com.mealos.data.RecipeAssistantClient
 import com.mealos.data.RecipeAssistantStore
@@ -12,6 +14,7 @@ import com.mealos.model.CookingTimer
 import com.mealos.model.Ingredient
 import com.mealos.model.IngredientCategory
 import com.mealos.model.MealOsUserState
+import com.mealos.model.MealOsAccountState
 import com.mealos.model.PlanEntry
 import com.mealos.model.Recipe
 import com.mealos.model.RecipeEditorState
@@ -41,6 +44,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     private val timerStore = TimerStore(application)
     private val assistantStore = RecipeAssistantStore(application)
     private val assistantClient = RecipeAssistantClient()
+    private val firebaseAuth = FirebaseAuth.getInstance()
 
     val userState: StateFlow<MealOsUserState> = repository.state.stateIn(
         viewModelScope,
@@ -63,9 +67,19 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     val timers = _timers.asStateFlow()
     private val _assistantState = MutableStateFlow(assistantStore.load())
     val assistantState = _assistantState.asStateFlow()
+    private val _accountState = MutableStateFlow(firebaseAuth.currentUser.toAccountState())
+    val accountState = _accountState.asStateFlow()
     private var assistantRequestJob: Job? = null
+    private var connectedCloudUid: String? = null
+    private val authListener = FirebaseAuth.AuthStateListener { auth -> handleAuthUser(auth.currentUser) }
 
     init {
+        firebaseAuth.addAuthStateListener(authListener)
+        viewModelScope.launch {
+            repository.cloudSyncState.collect { status ->
+                _accountState.update { it.copy(syncStatus = status) }
+            }
+        }
         viewModelScope.launch {
             while (isActive) {
                 val now = System.currentTimeMillis()
@@ -124,6 +138,23 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun clearImportError() {
         _importError.value = null
+    }
+
+    fun beginGoogleSignIn() {
+        _accountState.update { it.copy(signingIn = true, message = null) }
+    }
+
+    fun finishGoogleSignIn(error: String? = null) {
+        _accountState.update { it.copy(signingIn = false, message = error) }
+    }
+
+    fun signOut() {
+        firebaseAuth.signOut()
+        finishGoogleSignIn()
+    }
+
+    fun retryCloudSync() {
+        _accountState.value.uid?.let(repository::connectCloud)
     }
 
     fun setAssistantScanning(scanning: Boolean) {
@@ -247,6 +278,25 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         viewModelScope.launch { block() }
     }
 
+    private fun handleAuthUser(user: FirebaseUser?) {
+        if (user == null) {
+            connectedCloudUid = null
+            repository.disconnectCloud()
+            _accountState.value = MealOsAccountState()
+            return
+        }
+        _accountState.update { current -> user.toAccountState().copy(signingIn = false, message = current.message) }
+        if (connectedCloudUid != user.uid) {
+            connectedCloudUid = user.uid
+            repository.connectCloud(user.uid)
+        }
+    }
+
+    override fun onCleared() {
+        firebaseAuth.removeAuthStateListener(authListener)
+        super.onCleared()
+    }
+
     private fun requestAssistantResponse() {
         val messages = _assistantState.value.messages
         val model = _assistantState.value.model
@@ -297,3 +347,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         origin = RecipeOrigin.MANUAL
     )
 }
+
+private fun FirebaseUser?.toAccountState(): MealOsAccountState = this?.let { user ->
+    MealOsAccountState(uid = user.uid, displayName = user.displayName, email = user.email)
+} ?: MealOsAccountState()

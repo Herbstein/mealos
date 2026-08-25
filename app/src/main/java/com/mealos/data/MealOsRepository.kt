@@ -31,10 +31,16 @@ class MealOsRepository(private val context: Context) {
     }
 
     val state: Flow<MealOsUserState> = context.dataStore.data.map(::decodeState)
-    val recipes: Flow<List<Recipe>> = context.dataStore.data.map { prefs ->
-        RecipeCatalog.recipes + RecipeDocument.decodeRecipes(prefs[Keys.customRecipes])
+    val customRecipes: Flow<List<Recipe>> = context.dataStore.data.map { prefs ->
+        RecipeDocument.decodeRecipes(prefs[Keys.customRecipes])
             .filterNot { custom -> RecipeCatalog.recipes.any { it.id == custom.id } }
     }
+    val recipes: Flow<List<Recipe>> = customRecipes.map { RecipeCatalog.recipes + it }
+    private val cloudSync = MealOsCloudSync(this)
+    val cloudSyncState = cloudSync.state
+
+    fun connectCloud(uid: String) = cloudSync.start(uid)
+    fun disconnectCloud() = cloudSync.stop()
 
     suspend fun toggleFavorite(recipeId: String) = mutateSet(Keys.favorites, recipeId)
     suspend fun togglePantry(ingredientId: String) = mutateSet(Keys.pantry, ingredientId, defaultPantry)
@@ -97,6 +103,24 @@ class MealOsRepository(private val context: Context) {
             prefs[Keys.favorites] = prefs[Keys.favorites].orEmpty() - recipeId
             prefs[Keys.plan] = encodePlan(decodePlan(prefs[Keys.plan]).filterNot { it.recipeId == recipeId })
         }
+    }
+
+    internal suspend fun replaceUserState(state: MealOsUserState) {
+        context.dataStore.edit { prefs ->
+            prefs[Keys.favorites] = state.favorites
+            prefs[Keys.ratings] = JSONObject(state.ratings as Map<*, *>).toString()
+            prefs[Keys.notes] = JSONObject(state.notes as Map<*, *>).toString()
+            prefs[Keys.pantry] = state.pantry
+            prefs[Keys.plan] = encodePlan(state.plan)
+            prefs[Keys.checkedGroceries] = state.checkedGroceries
+        }
+    }
+
+    internal suspend fun replaceCustomRecipes(recipes: List<Recipe>) {
+        val valid = recipes
+            .filter { it.origin != RecipeOrigin.CORE && RecipeDocument.validate(it).isEmpty() }
+            .distinctBy { it.id }
+        context.dataStore.edit { prefs -> prefs[Keys.customRecipes] = RecipeDocument.encodeRecipes(valid) }
     }
 
     private suspend fun mutateSet(

@@ -60,6 +60,8 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
@@ -86,6 +88,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
@@ -151,6 +154,8 @@ import com.mealos.model.GroceryItem
 import com.mealos.model.Ingredient
 import com.mealos.model.IngredientCategory
 import com.mealos.model.MealOsUserState
+import com.mealos.model.MealOsAccountState
+import com.mealos.model.CloudSyncStatus
 import com.mealos.model.PlanEntry
 import com.mealos.model.PortionMode
 import com.mealos.model.Recipe
@@ -195,7 +200,9 @@ fun MealOsApp(
     preciseTimersAvailable: Boolean,
     onEnableTimerAlerts: () -> Unit,
     onEnablePreciseTimers: () -> Unit,
-    onScanRecipe: () -> Unit
+    onScanRecipe: () -> Unit,
+    onSignIn: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val userState by viewModel.userState.collectAsStateWithLifecycle()
     val recipes by viewModel.recipes.collectAsStateWithLifecycle()
@@ -203,6 +210,7 @@ fun MealOsApp(
     val importError by viewModel.importError.collectAsStateWithLifecycle()
     val timers by viewModel.timers.collectAsStateWithLifecycle()
     val assistantState by viewModel.assistantState.collectAsStateWithLifecycle()
+    val accountState by viewModel.accountState.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var route: Route by rememberSaveable(stateSaver = RouteSaver) { mutableStateOf(Route.Main(Destination.TODAY)) }
@@ -286,11 +294,12 @@ fun MealOsApp(
                     )
                 }
                 Spacer(Modifier.weight(1f))
-                Text(
-                    "Local-first · no account",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(24.dp)
+                AccountShelf(
+                    state = accountState,
+                    onSignIn = onSignIn,
+                    onRetry = viewModel::retryCloudSync,
+                    onSignOut = onSignOut,
+                    modifier = Modifier.padding(16.dp)
                 )
             }
         }
@@ -315,6 +324,8 @@ fun MealOsApp(
                     },
                     fold = fold,
                     assistantState = assistantState,
+                    accountState = accountState,
+                    onSignIn = onSignIn,
                     onScanRecipe = onScanRecipe
                 )
                 is Route.Detail -> RecipeDetail(
@@ -399,6 +410,8 @@ private fun MainDestination(
     onNewRecipe: () -> Unit,
     fold: FoldingFeature?,
     assistantState: com.mealos.model.RecipeAssistantState,
+    accountState: MealOsAccountState,
+    onSignIn: () -> Unit,
     onScanRecipe: () -> Unit
 ) {
     Scaffold(
@@ -441,12 +454,97 @@ private fun MainDestination(
                     onSend = viewModel::sendAssistantMessage,
                     onRetry = viewModel::retryAssistant,
                     onClear = viewModel::clearAssistantChat,
-                    onReviewDraft = viewModel::reviewAssistantDraft
+                    onReviewDraft = viewModel::reviewAssistantDraft,
+                    signedIn = accountState.signedIn,
+                    onSignIn = onSignIn
                 )
                 Destination.PANTRY -> PantryScreen(state, recipes, viewModel)
             }
         }
     }
+}
+
+@Composable
+private fun AccountShelf(
+    state: MealOsAccountState,
+    onSignIn: () -> Unit,
+    onRetry: () -> Unit,
+    onSignOut: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Enamel,
+        contentColor = Cream,
+        shape = RoundedCornerShape(22.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = if (state.syncStatus == CloudSyncStatus.SYNCED) Cream else RaisedEnamel,
+                    shape = CircleShape,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        when {
+                            state.signingIn || state.syncStatus in setOf(CloudSyncStatus.CONNECTING, CloudSyncStatus.SYNCING) ->
+                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = TimerYellow)
+                            state.syncStatus == CloudSyncStatus.SYNCED ->
+                                Icon(Icons.Default.CloudDone, contentDescription = null, tint = Enamel, modifier = Modifier.size(22.dp))
+                            else -> Icon(Icons.Default.CloudOff, contentDescription = null, tint = Cream, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        state.displayName?.takeIf(String::isNotBlank) ?: if (state.signedIn) "Google account" else "Cloud sync",
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        accountStatusLabel(state),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Cream.copy(alpha = .74f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            state.message?.let { message ->
+                Text(message, style = MaterialTheme.typography.bodySmall, color = TimerYellow, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            }
+            if (state.signedIn) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (state.syncStatus in setOf(CloudSyncStatus.OFFLINE, CloudSyncStatus.ERROR)) {
+                        TextButton(onClick = onRetry, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                            Text("Retry sync", color = TimerYellow)
+                        }
+                    }
+                    TextButton(onClick = onSignOut, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                        Text("Sign out", color = Cream)
+                    }
+                }
+            } else {
+                Button(
+                    onClick = onSignIn,
+                    enabled = !state.signingIn,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = ActionOrange),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (state.signingIn) "Opening Google…" else "Sign in with Google") }
+            }
+        }
+    }
+}
+
+private fun accountStatusLabel(state: MealOsAccountState): String = when (state.syncStatus) {
+    CloudSyncStatus.SIGNED_OUT -> "Sync recipes, plans, pantry, and notes"
+    CloudSyncStatus.CONNECTING -> "Connecting your kitchen…"
+    CloudSyncStatus.SYNCING -> "Waiting to sync latest changes…"
+    CloudSyncStatus.SYNCED -> state.email ?: "Recipes and plans synced"
+    CloudSyncStatus.OFFLINE -> "Offline · changes stay on this device"
+    CloudSyncStatus.ERROR -> "Cloud sync needs attention"
 }
 
 @Composable

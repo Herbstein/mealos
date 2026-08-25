@@ -20,7 +20,6 @@ jobs:
       MEALOS_KEY_ALIAS: ${{ secrets.MEALOS_KEY_ALIAS }}
       MEALOS_KEY_PASSWORD: ${{ secrets.MEALOS_KEY_PASSWORD }}
       MEALOS_BRIDGE_URL: ${{ secrets.MEALOS_BRIDGE_URL }}
-      MEALOS_BRIDGE_TOKEN: ${{ secrets.MEALOS_BRIDGE_TOKEN }}
 
     steps:
       - name: Check out MealOS
@@ -68,7 +67,6 @@ jobs:
           test -n "$MEALOS_KEY_ALIAS"
           test -n "$MEALOS_KEY_PASSWORD"
           test -n "$MEALOS_BRIDGE_URL"
-          test -n "$MEALOS_BRIDGE_TOKEN"
           printf '%s' "$MEALOS_KEYSTORE_BASE64" | base64 --decode > "$MEALOS_KEYSTORE_PATH"
 
       - name: Test and build signed APK
