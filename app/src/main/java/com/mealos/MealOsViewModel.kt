@@ -4,9 +4,17 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.mealos.data.RecipeCatalog
+import com.mealos.data.RecipeDocument
+import com.mealos.data.RecipeImportResult
 import com.mealos.model.CookingTimer
+import com.mealos.model.Ingredient
+import com.mealos.model.IngredientCategory
 import com.mealos.model.MealOsUserState
 import com.mealos.model.PlanEntry
+import com.mealos.model.Recipe
+import com.mealos.model.RecipeEditorState
+import com.mealos.model.RecipeOrigin
+import com.mealos.model.RecipeStep
 import com.mealos.timer.TimerNotifications
 import com.mealos.timer.TimerStore
 import com.mealos.timer.refreshedAt
@@ -30,6 +38,15 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         SharingStarted.WhileSubscribed(5_000),
         MealOsUserState()
     )
+
+    val recipes: StateFlow<List<Recipe>> = repository.recipes.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        RecipeCatalog.recipes
+    )
+
+    private val _editorState = MutableStateFlow<RecipeEditorState?>(null)
+    val editorState = _editorState.asStateFlow()
 
     private val _timers = MutableStateFlow(timerStore.load())
     val timers = _timers.asStateFlow()
@@ -61,6 +78,51 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     fun setPlan(entry: PlanEntry) = launch { repository.setPlanEntry(entry) }
     fun removePlan(dayIndex: Int) = launch { repository.removePlanEntry(dayIndex) }
     fun clearPlan() = launch { repository.clearPlan() }
+
+    fun startNewRecipe() {
+        _editorState.value = RecipeEditorState(blankRecipe())
+    }
+
+    fun startEditingRecipe(recipeId: String) {
+        val recipe = recipes.value.firstOrNull { it.id == recipeId } ?: return
+        _editorState.value = if (recipe.origin == RecipeOrigin.CORE) {
+            RecipeEditorState(
+                recipe.copy(id = UUID.randomUUID().toString(), origin = RecipeOrigin.MANUAL),
+                message = "This is a personal copy. The core recipe stays unchanged."
+            )
+        } else RecipeEditorState(recipe)
+    }
+
+    fun importRecipe(raw: String): RecipeImportResult {
+        val result = RecipeDocument.decode(raw)
+        result.recipe?.let {
+            _editorState.value = RecipeEditorState(
+                recipe = it,
+                imported = true,
+                message = "Imported as a draft. Review it before saving."
+            )
+        }
+        return result
+    }
+
+    fun updateEditorRecipe(transform: (Recipe) -> Recipe) {
+        _editorState.update { state -> state?.copy(recipe = transform(state.recipe), message = null) }
+    }
+
+    fun saveEditorRecipe(): List<String> {
+        val state = _editorState.value ?: return listOf("No recipe draft is open.")
+        val errors = RecipeDocument.validate(state.recipe)
+        if (errors.isNotEmpty()) return errors
+        launch { repository.saveRecipe(state.recipe) }
+        _editorState.value = state.copy(message = "Saved to your recipe library.")
+        return emptyList()
+    }
+
+    fun closeEditor() {
+        _editorState.value = null
+    }
+
+    fun deleteRecipe(recipeId: String) = launch { repository.deleteRecipe(recipeId) }
 
     fun addTimer(label: String, seconds: Int) {
         val id = UUID.randomUUID().toString()
@@ -99,7 +161,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
 
     fun seedPlanIfEmpty() {
         if (userState.value.plan.isNotEmpty()) return
-        RecipeCatalog.recipes.take(5).forEachIndexed { index, recipe ->
+        recipes.value.take(5).forEachIndexed { index, recipe ->
             setPlan(PlanEntry(index, recipe.id))
         }
     }
@@ -113,4 +175,19 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
         timerStore.save(updated)
         _timers.value = updated
     }
+
+    private fun blankRecipe() = Recipe(
+        id = UUID.randomUUID().toString(),
+        name = "",
+        shortName = "",
+        effortMinutes = 10,
+        totalMinutes = 30,
+        baseServings = 2,
+        equipment = emptyList(),
+        tags = emptyList(),
+        leftoverNote = "",
+        ingredients = listOf(Ingredient(UUID.randomUUID().toString(), "", 1.0, "count", IngredientCategory.PANTRY)),
+        steps = listOf(RecipeStep("", "", "Kitchen")),
+        origin = RecipeOrigin.MANUAL
+    )
 }

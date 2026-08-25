@@ -17,6 +17,12 @@ enum class PortionMode(val label: String, val servings: Int) {
     DINNER_PLUS_LUNCH("Dinner + lunch tomorrow", 4)
 }
 
+enum class RecipeOrigin {
+    CORE,
+    MANUAL,
+    CHATGPT_IMPORT
+}
+
 data class Ingredient(
     val id: String,
     val name: String,
@@ -45,7 +51,15 @@ data class Recipe(
     val tags: List<String>,
     val leftoverNote: String,
     val ingredients: List<Ingredient>,
-    val steps: List<RecipeStep>
+    val steps: List<RecipeStep>,
+    val description: String = "",
+    val origin: RecipeOrigin = RecipeOrigin.CORE
+)
+
+data class RecipeEditorState(
+    val recipe: Recipe,
+    val imported: Boolean = false,
+    val message: String? = null
 )
 
 data class PlanEntry(

@@ -9,6 +9,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.mealos.model.MealOsUserState
 import com.mealos.model.PlanEntry
 import com.mealos.model.PortionMode
+import com.mealos.model.Recipe
+import com.mealos.model.RecipeOrigin
 import com.mealos.model.defaultPantry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -25,9 +27,14 @@ class MealOsRepository(private val context: Context) {
         val pantry = stringSetPreferencesKey("pantry")
         val plan = stringPreferencesKey("weekly_plan")
         val checkedGroceries = stringSetPreferencesKey("checked_groceries")
+        val customRecipes = stringPreferencesKey("custom_recipes")
     }
 
     val state: Flow<MealOsUserState> = context.dataStore.data.map(::decodeState)
+    val recipes: Flow<List<Recipe>> = context.dataStore.data.map { prefs ->
+        RecipeCatalog.recipes + RecipeDocument.decodeRecipes(prefs[Keys.customRecipes])
+            .filterNot { custom -> RecipeCatalog.recipes.any { it.id == custom.id } }
+    }
 
     suspend fun toggleFavorite(recipeId: String) = mutateSet(Keys.favorites, recipeId)
     suspend fun togglePantry(ingredientId: String) = mutateSet(Keys.pantry, ingredientId, defaultPantry)
@@ -68,6 +75,27 @@ class MealOsRepository(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[Keys.plan] = "[]"
             prefs[Keys.checkedGroceries] = emptySet()
+        }
+    }
+
+    suspend fun saveRecipe(recipe: Recipe) {
+        require(RecipeDocument.validate(recipe).isEmpty())
+        require(recipe.origin != RecipeOrigin.CORE)
+        context.dataStore.edit { prefs ->
+            val recipes = RecipeDocument.decodeRecipes(prefs[Keys.customRecipes]).toMutableList()
+            val saved = recipe.copy(origin = recipe.origin.takeUnless { it == RecipeOrigin.CORE } ?: RecipeOrigin.MANUAL)
+            val index = recipes.indexOfFirst { it.id == saved.id }
+            if (index >= 0) recipes[index] = saved else recipes.add(saved)
+            prefs[Keys.customRecipes] = RecipeDocument.encodeRecipes(recipes)
+        }
+    }
+
+    suspend fun deleteRecipe(recipeId: String) {
+        context.dataStore.edit { prefs ->
+            val recipes = RecipeDocument.decodeRecipes(prefs[Keys.customRecipes]).filterNot { it.id == recipeId }
+            prefs[Keys.customRecipes] = RecipeDocument.encodeRecipes(recipes)
+            prefs[Keys.favorites] = prefs[Keys.favorites].orEmpty() - recipeId
+            prefs[Keys.plan] = encodePlan(decodePlan(prefs[Keys.plan]).filterNot { it.recipeId == recipeId })
         }
     }
 
