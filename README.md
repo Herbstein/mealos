@@ -21,8 +21,8 @@ MealOS publishes private, signed APK releases from GitHub tags. The release sign
 To publish an update (use the next semantic version):
 
 ```sh
-git tag v0.6.0
-git push origin v0.6.0
+git tag vX.Y.Z
+git push origin main vX.Y.Z
 ```
 
 The `Release MealOS` workflow tests the app, derives a monotonically increasing Android version code from the tag, builds the signed APK, and attaches it to the matching private GitHub Release.

@@ -1,6 +1,6 @@
 # Recipe Assistant setup
 
-MealOS includes a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway authenticated with the owner's Firebase identity.
+MealOS includes a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway authenticated with the signed-in user's Firebase identity.
 
 ## Railway service
 
@@ -10,7 +10,7 @@ Set these Railway variables:
 
 - `CLAUDE_CODE_OAUTH_TOKEN`: the Claude Code credential used by the Agent SDK.
 - `FIREBASE_PROJECT_ID`: `mealos-af8fc`.
-- `MEALOS_ALLOWED_FIREBASE_UID`: the owner's UID shown in Firebase Console after the first successful sign-in.
+- `MEALOS_ALLOWED_FIREBASE_UIDS`: comma-separated Firebase Authentication UIDs authorized to use the assistant.
 
 Set the health check path to `/health`. After deployment, verify that it returns `{ "ok": true }`. Do not expose Railway logs containing request bodies or either token.
 
@@ -20,11 +20,11 @@ The Assistant header offers Sonnet (default), Opus, and Haiku. The choice applie
 
 ## Android release
 
-Add this private GitHub Actions secret before tagging 0.6.0:
+Add this private GitHub Actions secret before publishing a release:
 
 - `MEALOS_BRIDGE_URL`: the public Railway service URL, without `/v1/recipe-chat`.
 
-The public Railway URL is compiled into the APK. MealOS retrieves a short-lived Firebase ID token after Google sign-in; Railway verifies its signature and accepts only `MEALOS_ALLOWED_FIREBASE_UID`. No reusable bridge credential is stored in the APK or GitHub Actions.
+The public Railway URL is compiled into the APK. MealOS retrieves a short-lived Firebase ID token after Google sign-in; Railway verifies its signature and accepts only UIDs listed in `MEALOS_ALLOWED_FIREBASE_UIDS`. No reusable bridge credential is stored in the APK or GitHub Actions. The older singular `MEALOS_ALLOWED_FIREBASE_UID` variable remains supported only as a migration fallback.
 
 `CLAUDE_CODE_OAUTH_TOKEN` must never be added to GitHub Actions or the APK. It belongs only in Railway.
 
