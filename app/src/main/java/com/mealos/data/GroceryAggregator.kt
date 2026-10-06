@@ -23,12 +23,14 @@ object GroceryAggregator {
                             name = ingredient.name,
                             amount = ingredient.amount * multiplier,
                             unit = ingredient.unit,
-                            category = ingredient.category
+                            category = ingredient.category,
+                            plannedDays = setOf(entry.dayIndex),
+                            pantryStaple = ingredient.pantryStaple
                         )
                     }
             }
             .groupBy { it.id }
-            .map { (_, items) -> items.first().copy(amount = items.sumOf { it.amount }) }
+            .map { (_, items) -> items.first().copy(amount = items.sumOf { it.amount }, plannedDays = items.flatMap { it.plannedDays }.toSet(), pantryStaple = items.any { it.pantryStaple }) }
             .sortedWith(compareBy<GroceryItem> { it.category.ordinal }.thenBy { it.name })
     }
 }

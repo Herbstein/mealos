@@ -57,6 +57,36 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Start the potatoes"].firstMatch.waitForExistence(timeout: 10))
         capture("07-cooking-restored")
     }
+    func testConsecutiveWeeksPersistAndCombineShopping() throws {
+        func show(_ button: XCUIElement) {
+            for _ in 0..<5 { if button.exists && button.isHittable { return }; app.swipeUp() }
+            XCTAssertTrue(button.isHittable)
+        }
+        func chooseChicken() {
+            let recipe = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Garlic-herb chicken")).firstMatch
+            XCTAssertTrue(recipe.waitForExistence(timeout: 5)); recipe.tap()
+        }
+        tap("Plan tonight"); chooseChicken()
+        let next = app.buttons["Next week"].firstMatch
+        show(next); next.tap()
+        let day = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plan-day-")).firstMatch
+        show(day)
+        let futureID = day.identifier
+        day.tap(); chooseChicken()
+        let future = app.buttons[futureID]
+        XCTAssertTrue(future.waitForExistence(timeout: 5))
+        XCTAssertTrue(future.label.contains("Garlic-herb chicken"))
+        capture("multiweek-plan")
+        app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
+        show(app.buttons["Next week"].firstMatch); tap("Next week")
+        XCTAssertTrue(app.buttons[futureID].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons[futureID].label.contains("Garlic-herb chicken"))
+        tap("Shop")
+        let grocery = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Baby potatoes,")).firstMatch
+        show(grocery)
+        XCTAssertTrue(grocery.label.contains("2 lb"))
+        capture("multiweek-shopping")
+    }
     func testRecipeEditorValidationAndDiscard() throws {
         tap("Recipes"); tap("Add recipe"); tap("Create recipe")
         tap("Save")

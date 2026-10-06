@@ -41,7 +41,34 @@ final class MealOSCoreTests: XCTestCase {
         XCTAssertEqual(state.plan[0].portion.servings, 4)
         XCTAssertEqual(state.notes["bbq-chicken"], "More sauce")
         XCTAssertEqual(try Documents.decodeState(Documents.encode(state)), state)
-        XCTAssertThrowsError(try Documents.decodeState(Data(raw.replacingOccurrences(of: "\"schemaVersion\":1", with: "\"schemaVersion\":2").utf8)))
+        XCTAssertThrowsError(try Documents.decodeState(Data(raw.replacingOccurrences(of: "\"schemaVersion\":1", with: "\"schemaVersion\":99").utf8)))
+    }
+    func testDatedPlansKeepConsecutiveWeeksAfterRoundTrip() throws {
+        var state = UserState()
+        state.plan = [PlanEntry(day: 20732, recipe: "bbq-chicken", portion: .one), PlanEntry(day: 20739, recipe: "bbq-chicken", portion: .dinnerPlusLunch)]
+        let decoded = try Documents.decodeState(Documents.encode(state))
+        XCTAssertEqual(decoded.plan, state.plan)
+        XCTAssertEqual(decoded.schemaVersion, 2)
+        let groceries = Groceries.aggregate(plan: decoded.plan, recipes: try catalog(), pantry: ["salt"])
+        let chicken = try XCTUnwrap(groceries.first { $0.id == "chicken-breast:lb" })
+        XCTAssertEqual(chicken.amount, 2.5)
+        XCTAssertEqual(chicken.plannedDays, [20732, 20739])
+        XCTAssertEqual(Set(chicken.plannedDays.map { PlanCalendar.weekStart($0) }).count, 2)
+    }
+    func testLegacyPlanMigrationIsPersistedOnlyOnce() throws {
+        var legacy = UserState()
+        legacy.schemaVersion = 1
+        legacy.plan = [PlanEntry(day: 0, recipe: "bbq-chicken", portion: .two), PlanEntry(day: 6, recipe: "pizza", portion: .one)]
+        let migrated = try Documents.decodeState(Documents.encode(legacy))
+        XCTAssertEqual(migrated.plan.map(\.day), [PlanCalendar.weekStart(), PlanCalendar.weekStart() + 6])
+        XCTAssertEqual(try Documents.decodeState(Documents.encode(migrated)), migrated)
+    }
+    func testCalendarAcrossYearLeapDayAndDaylightSaving() throws {
+        for day in [19722, 19723, 19782, 19783, 19792, 20030] {
+            XCTAssertEqual(PlanCalendar.day(PlanCalendar.date(day)), day)
+            XCTAssertEqual(PlanCalendar.weekStart(day + 7), PlanCalendar.weekStart(day) + 7)
+            XCTAssertTrue((PlanCalendar.weekStart(day)..<(PlanCalendar.weekStart(day) + 7)).contains(day))
+        }
     }
     func testMinimalImportedRecipeUsesAndroidDefaults() throws {
         let raw = #"{"name":"Toast","ingredients":[{"name":"Bread","amount":2,"unit":"slices","category":"bakery"}],"steps":[{"title":"Toast","instruction":"Toast the bread."}]}"#

@@ -24,8 +24,8 @@ android {
         applicationId = "com.mealos"
         minSdk = 26
         targetSdk = 37
-        versionCode = providers.environmentVariable("MEALOS_VERSION_CODE").orNull?.toIntOrNull() ?: 7_000
-        versionName = providers.environmentVariable("MEALOS_VERSION_NAME").orNull ?: "0.7.0"
+        versionCode = providers.environmentVariable("MEALOS_VERSION_CODE").orNull?.toIntOrNull() ?: 7_001
+        versionName = providers.environmentVariable("MEALOS_VERSION_NAME").orNull ?: "0.7.1"
         buildConfigField("String", "RECIPE_BRIDGE_URL", "\"${recipeBridgeUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

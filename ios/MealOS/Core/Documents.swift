@@ -12,8 +12,8 @@ public enum Documents {
     }
     public static func decodeState(_ data: Data) throws -> UserState {
         let value = try JSONDecoder().decode(UserState.self, from: data)
-        guard value.schemaVersion == 1 else { throw MealOSError("This account uses a newer data format. Update MealOS before syncing.") }
-        guard value.plan.allSatisfy({ (0...6).contains($0.day) }), Set(value.plan.map(\.day)).count == value.plan.count else {
+        guard value.schemaVersion == 2 else { throw MealOSError("This account uses a newer data format. Update MealOS before syncing.") }
+        guard Set(value.plan.map(\.day)).count == value.plan.count else {
             throw MealOSError("The saved meal plan contains invalid days.")
         }
         return value

@@ -28,13 +28,14 @@ class GroceryAggregatorTest {
     fun groceryListConsolidatesAndExcludesPantry() {
         val result = GroceryAggregator.aggregate(
             entries = listOf(
-                PlanEntry(0, "garlic-herb-chicken", PortionMode.TWO),
-                PlanEntry(1, "bbq-chicken", PortionMode.DINNER_PLUS_LUNCH)
+                PlanEntry(20732, "garlic-herb-chicken", PortionMode.TWO),
+                PlanEntry(20739, "bbq-chicken", PortionMode.DINNER_PLUS_LUNCH)
             ),
             recipes = RecipeCatalog.recipes,
             pantry = setOf("olive-oil", "salt")
         )
         assertEquals(3.0, result.first { it.name == "Chicken breasts" }.amount, 0.001)
+        assertEquals(setOf(20732, 20739), result.first { it.name == "Chicken breasts" }.plannedDays)
         assertEquals(3.0, result.first { it.name == "Baby potatoes" }.amount, 0.001)
         assertFalse(result.any { it.name == "Olive oil" || it.name == "Salt" })
     }

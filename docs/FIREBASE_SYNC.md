@@ -33,3 +33,22 @@ Redeploy Railway after changing its list. The old singular `MEALOS_ALLOWED_FIREB
 On the first successful connection, an empty cloud account is seeded from the device. If the cloud account already contains MealOS data, the cloud copy initializes that device. Subsequent changes are written after a short debounce and Firestore's Android cache keeps reads and writes available offline. Preferences/planning and personal recipes are separate cloud documents so editing a recipe does not overwrite a plan change.
 
 Firestore resolves simultaneous edits to the same document with last-write-wins behavior. MealOS exposes connecting, saving, synced, offline, and error states in the drawer. Signing out stops synchronization but does not erase the local copy.
+
+## Dated meal plans
+
+Preferences payload schema 2 stores each plan entry's `day` as a calendar epoch day
+(days since 1970-01-01), shared by Android and Apple. The Firestore envelope stays
+at schema 1, as do recipe documents. Update both clients before editing a shared
+plan; older clients cannot read the new preferences payload.
+
+Legacy cloud and Apple plans map Monday–Sunday to the week of migration. Legacy
+Android device-only plans map their rolling day offsets to the migration date.
+The original format did not record a date, so earlier dates cannot be recovered.
+Migration is persisted locally and upgraded in the cloud, preventing dates from
+moving on later launches. Each date holds one dinner with its own portion choice.
+
+The calendar navigates consecutive Monday–Sunday weeks. Shopping totals cover a
+selected 1–4 week window (two weeks initially), retaining pantry exclusions and
+separating incompatible units. Usage counts show meals and weeks per ingredient;
+these are a basis for comparing pack sizes, not automatic pack-size or shelf-life
+recommendations. Grocery checkmarks are scoped to the window and quantity.

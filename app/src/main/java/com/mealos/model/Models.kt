@@ -64,6 +64,7 @@ data class RecipeEditorState(
 )
 
 data class PlanEntry(
+    // Local calendar date as days since 1970-01-01 (schema 2).
     val dayIndex: Int,
     val recipeId: String,
     val portionMode: PortionMode = PortionMode.TWO
@@ -83,7 +84,9 @@ data class GroceryItem(
     val name: String,
     val amount: Double,
     val unit: String,
-    val category: IngredientCategory
+    val category: IngredientCategory,
+    val plannedDays: Set<Int> = emptySet(),
+    val pantryStaple: Boolean = false
 ) {
     val displayAmount: String
         get() = "${numberFormat.format(amount)} $unit".trim()

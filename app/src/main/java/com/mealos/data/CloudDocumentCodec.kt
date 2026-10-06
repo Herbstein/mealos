@@ -7,7 +7,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 internal object CloudDocumentCodec {
-    const val SCHEMA_VERSION = 1
+    const val SCHEMA_VERSION = 2
 
     fun encodeState(state: MealOsUserState): String = JSONObject().apply {
         put("schemaVersion", SCHEMA_VERSION)
@@ -29,7 +29,8 @@ internal object CloudDocumentCodec {
 
     fun decodeState(raw: String): MealOsUserState? = runCatching {
         val value = JSONObject(raw)
-        if (value.optInt("schemaVersion") != SCHEMA_VERSION) return null
+        val version = value.optInt("schemaVersion")
+        if (version !in 1..SCHEMA_VERSION) return null
         MealOsUserState(
             favorites = value.optJSONArray("favorites").strings().toSet(),
             ratings = value.optJSONObject("ratings").intMap(),
@@ -40,7 +41,12 @@ internal object CloudDocumentCodec {
                 (0 until plan.length()).mapNotNull { index ->
                     plan.optJSONObject(index)?.let { item ->
                         PlanEntry(
-                            dayIndex = item.optInt("day").coerceIn(0, 6),
+                            dayIndex = item.getInt("day").let { day ->
+                                if (version == 1) {
+                                    require(day in 0..6)
+                                    java.time.LocalDate.now().with(java.time.DayOfWeek.MONDAY).toEpochDay().toInt() + day
+                                } else day
+                            },
                             recipeId = item.optString("recipe"),
                             portionMode = runCatching { PortionMode.valueOf(item.optString("portion")) }
                                 .getOrDefault(PortionMode.TWO)

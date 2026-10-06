@@ -1,11 +1,28 @@
 import SwiftUI
 
-private let weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+private struct WeekNavigation: View {
+    @Binding var start: Int
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Button { start -= 7 } label: { Image(systemName: "chevron.left").frame(minWidth: 44, minHeight: 44) }.accessibilityLabel("Previous week")
+                Spacer()
+                Text(PlanCalendar.range(start)).font(.headline).multilineTextAlignment(.center)
+                Spacer()
+                Button { start += 7 } label: { Image(systemName: "chevron.right").frame(minWidth: 44, minHeight: 44) }.accessibilityLabel("Next week")
+            }.buttonStyle(.borderless)
+            if start != PlanCalendar.weekStart() {
+                Button("This week") { start = PlanCalendar.weekStart() }.frame(minHeight: 44).buttonStyle(.borderless)
+            }
+        }
+    }
+}
 struct PlanView: View {
     @EnvironmentObject private var store: MealStore
     @State private var selectedDay: DaySelection?
     @State private var cooking = false
-    private var today: Int { (Calendar.current.component(.weekday, from: Date()) + 5) % 7 }
+    @State private var weekStart = PlanCalendar.weekStart()
+    private var today: Int { PlanCalendar.day() }
     private var tonight: PlanEntry? { store.state.plan.first { $0.day == today } }
     var body: some View {
         List {
@@ -25,18 +42,19 @@ struct PlanView: View {
                     }
                 }.padding(.vertical, 14).foregroundStyle(MealTheme.cream)
             }.listRowBackground(MealTheme.enamel)
+            Section { WeekNavigation(start: $weekStart) }
             Section("Your week") {
-                ForEach(0..<7) { day in
+                ForEach(Array(weekStart..<(weekStart + 7)), id: \.self) { day in
                     HStack(alignment: .center, spacing: 16) {
                         Button { selectedDay = DaySelection(id: day) } label: {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(weekDays[day] + (day == today ? " · Today" : "")).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                                Text(PlanCalendar.label(day) + (day == today ? " · Today" : "")).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                                 if let entry = store.state.plan.first(where: { $0.day == day }), let recipe = store.recipes.first(where: { $0.id == entry.recipe }) {
                                     Text(recipe.shortName).font(.headline).foregroundStyle(.primary)
                                     Text(entry.portion.label).font(.caption).foregroundStyle(.secondary)
                                 } else { Text("Choose a meal").foregroundStyle(MealTheme.action) }
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8).contentShape(Rectangle())
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.plain).accessibilityIdentifier("plan-day-\(day)")
                         if let entry = store.state.plan.first(where: { $0.day == day }), let recipe = store.recipes.first(where: { $0.id == entry.recipe }) {
                             NavigationLink { RecipeDetail(recipe: recipe, initialPortion: entry.portion) } label: {
                                 Image(systemName: "book").frame(minWidth: 44, minHeight: 44)
@@ -76,7 +94,7 @@ struct DayPlanner: View {
                     }
                 }
             }.searchable(text: $search, prompt: "Find a recipe")
-                .navigationTitle(weekDays[day]).navigationBarTitleDisplayMode(.inline)
+                .navigationTitle(PlanCalendar.label(day)).navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
                 .onAppear { portion = store.state.plan.first(where: { $0.day == day })?.portion ?? .two }
         }
@@ -85,28 +103,43 @@ struct DayPlanner: View {
 struct GroceryView: View {
     @EnvironmentObject private var store: MealStore
     @State private var showPantry = false
+    @State private var weekStart = PlanCalendar.weekStart()
+    @State private var weeks = 2
+    private var plan: [PlanEntry] { store.state.plan.filter { $0.day >= weekStart && $0.day < weekStart + weeks * 7 } }
+    private var groceries: [GroceryItem] { Groceries.aggregate(plan: plan, recipes: store.recipes, pantry: store.state.pantry) }
+    private func checkID(_ item: GroceryItem) -> String { "\(weekStart):\(weeks):\(item.id):\(item.amount)" }
     var body: some View {
         List {
-            if store.state.plan.isEmpty {
-                EmptyMealView(title: "Plan a meal first", symbol: "basket", detail: "Ingredients from your weekly plan will appear here, combined and ready to shop.")
-            } else if store.groceries.isEmpty {
+            Section("Shopping window") {
+                WeekNavigation(start: $weekStart)
+                Picker("Consecutive weeks", selection: $weeks) {
+                    ForEach(1...4, id: \.self) { Text("\($0) \($0 == 1 ? "week" : "weeks")").tag($0) }
+                }
+                Text(PlanCalendar.range(weekStart, weeks: weeks)).font(.subheadline).foregroundStyle(.secondary)
+                Text("Totals cover this window. Repeated ingredients can help you compare larger packs; pantry items you already have stay excluded.").font(.subheadline).foregroundStyle(.secondary)
+            }
+            if plan.isEmpty {
+                EmptyMealView(title: "Plan a meal first", symbol: "basket", detail: "Add meals in this date range to build a combined shopping list.")
+            } else if groceries.isEmpty {
                 EmptyMealView(title: "Your pantry has it covered", symbol: "checkmark", detail: "All ingredients in your plan are excluded as pantry items.")
             } else {
                 Section {
-                    Text("\(store.groceries.filter { !store.state.checkedGroceries.contains($0.id) }.count) items left · \(store.state.plan.count) planned meals").foregroundStyle(.secondary)
+                    Text("\(groceries.filter { !store.state.checkedGroceries.contains(checkID($0)) }.count) items left · \(plan.count) planned meals").foregroundStyle(.secondary)
                 }
                 ForEach(IngredientCategory.allCases, id: \.self) { category in
-                    let items = store.groceries.filter { $0.category == category }
+                    let items = groceries.filter { $0.category == category }
                     if !items.isEmpty {
                         Section(category.label) {
                             ForEach(items) { item in
-                                let checked = store.state.checkedGroceries.contains(item.id)
-                                Button { store.toggleGrocery(item.id) } label: {
+                                let checked = store.state.checkedGroceries.contains(checkID(item))
+                                Button { store.toggleGrocery(checkID(item)) } label: {
                                     HStack(spacing: 16) {
                                         Image(systemName: checked ? "checkmark.circle.fill" : "circle").font(.title2).foregroundStyle(checked ? MealTheme.action : .secondary)
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(item.name).strikethrough(checked).foregroundStyle(.primary)
                                             Text(item.quantity).font(.subheadline).foregroundStyle(.secondary)
+                                            Text("\(item.pantryStaple ? "Staple · " : "")Used in \(item.plannedDays.count) meals across \(Set(item.plannedDays.map { PlanCalendar.weekStart($0) }).count) weeks")
+                                                .font(.caption).foregroundStyle(.secondary)
                                         }
                                         Spacer()
                                     }.frame(minHeight: 48).contentShape(Rectangle())
