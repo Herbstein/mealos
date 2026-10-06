@@ -10,6 +10,7 @@ final class MealOSUITests: XCTestCase {
     private func launch(arguments: [String] = []) {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"] + arguments
         app.launch()
+        tap("Plan")
     }
     private func capture(_ name: String) {
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -20,6 +21,76 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(button.existsOrWait(timeout: 15), "Missing button: \(label)\n\(app.debugDescription)")
         button.tap()
     }
+    func testHomeOverviewAndNavigation() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Home"].existsOrWait(timeout: 20))
+        capture("home-empty")
+        tap("Settings")
+        XCTAssertTrue(app.navigationBars["Settings"].existsOrWait(timeout: 10))
+        tap("Done")
+        tap("Plan tonight")
+        let chicken = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Garlic-herb chicken")).firstMatch
+        XCTAssertTrue(chicken.existsOrWait(timeout: 10)); chicken.tap()
+        XCTAssertTrue(app.buttons["Start cooking"].firstMatch.existsOrWait(timeout: 10))
+        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let civil = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        let today = Int(utc.date(from: civil)!.timeIntervalSince1970 / 86400)
+        tap("home-day-\(Calendar.current.component(.weekday, from: Date()) == 1 ? today - 1 : today + 1)")
+        tap("Choose a meal")
+        let tacos = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Beef tacos")).firstMatch
+        for _ in 0..<6 {
+            if tacos.exists && tacos.isHittable { break }
+            app.collectionViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(tacos.exists && tacos.isHittable); tacos.tap()
+        tap("home-day-\(today)")
+        capture("home-selected")
+        tap("Start cooking")
+        XCTAssertTrue(app.staticTexts["Prep the potatoes"].existsOrWait(timeout: 10))
+        app.navigationBars.buttons.firstMatch.tap()
+        let scroll = app.scrollViews.firstMatch
+        for _ in 0..<4 {
+            if app.buttons["home-shopping"].isHittable { break }
+            scroll.swipeUp()
+        }
+        capture("home-lower")
+        tap("home-shopping")
+        XCTAssertTrue(app.navigationBars["Grocery list"].existsOrWait(timeout: 10))
+        tap("Home")
+        tap("home-assistant")
+        XCTAssertTrue(app.navigationBars["Recipe Assistant"].existsOrWait(timeout: 10))
+        tap("Home")
+        tap("Browse recipes")
+        XCTAssertTrue(app.navigationBars["Recipes"].existsOrWait(timeout: 10))
+        app.terminate()
+        app.launchArguments = ["--uitesting"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Home"].existsOrWait(timeout: 10))
+        XCTAssertTrue(app.buttons["Start cooking"].firstMatch.existsOrWait(timeout: 10))
+    }
+
+    func testHomeLargeText() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Home"].existsOrWait(timeout: 20))
+        tap("Plan tonight")
+        let recipe = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Garlic-herb chicken")).firstMatch
+        XCTAssertTrue(recipe.existsOrWait(timeout: 10)); recipe.tap()
+        for _ in 0..<5 { app.scrollViews.firstMatch.swipeDown() }
+        capture("home-accessibility-top")
+        app.scrollViews.firstMatch.swipeUp()
+        capture("home-accessibility-middle")
+        let scroll = app.scrollViews.firstMatch
+        for index in 1...10 {
+            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
+            capture("home-accessibility-scroll-\(index)")
+        }
+        XCTAssertTrue(app.buttons["home-shopping"].isHittable)
+        capture("home-accessibility-bottom")
+    }
+
     func testPlanShopCookAndRestore() throws {
         launch()
         func showGrocery(_ row: XCUIElement) {
@@ -97,7 +168,7 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(future.existsOrWait(timeout: 5))
         XCTAssertTrue(future.label.contains("Garlic-herb chicken"))
         capture("multiweek-plan")
-        app.terminate(); app.launchArguments = ["--uitesting"]; app.launch()
+        app.terminate(); app.launchArguments = ["--uitesting"]; app.launch(); tap("Plan")
         show(app.buttons["Next week"].firstMatch); tap("Next week")
         XCTAssertTrue(app.buttons[futureID].existsOrWait(timeout: 5))
         XCTAssertTrue(app.buttons[futureID].label.contains("Garlic-herb chicken"))

@@ -12,6 +12,8 @@ enum MealTheme {
     static let background = adaptive(light: 0xF7F3EA, dark: 0x191918)
     static let surface = adaptive(light: 0xFFFCF6, dark: 0x272725)
     static let text = adaptive(light: 0x242321, dark: 0xF7F3EA)
+    // Secondary copy on our custom canvas needs stronger contrast than system secondary.
+    static let secondaryText = adaptive(light: 0x645E57, dark: 0xC4BEB5)
 
     private static func rgb(_ hex: UInt32) -> UIColor {
         UIColor(red: CGFloat((hex >> 16) & 255) / 255,

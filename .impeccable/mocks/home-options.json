@@ -1,0 +1,66 @@
+{
+  "title": "Forkware \u00b7 A new home",
+  "question": "Round two: upcoming meals first, with richer food imagery and three more distinctive compositions. Food images and meal data are illustrative.",
+  "options": [
+    {
+      "id": "menu-deck",
+      "label": "The menu deck",
+      "thesis": "Swipe through what\u2019s cooking next, then explore something new.",
+      "palette": [
+        "#191918",
+        "#F7F3EA",
+        "#F3AD88"
+      ],
+      "materials": [
+        "Native iOS controls",
+        "Food photography",
+        "Condensed display type"
+      ],
+      "viewport": "A large food-led tonight card with tomorrow peeking alongside, then recipe ideas and shopping.",
+      "risk": "Photography needs a dependable image source in the recipe model.",
+      "comp": "/Users/arjunakankipati/.codex/worktrees/e802/mealos/.impeccable/mocks/decision/menu-deck.png"
+    },
+    {
+      "id": "week-and-table",
+      "label": "Your week, served",
+      "thesis": "A compact week strip anchors a generous view of tonight\u2019s meal.",
+      "palette": [
+        "#191918",
+        "#F7F3EA",
+        "#F3AD88"
+      ],
+      "materials": [
+        "Native iOS controls",
+        "Food photography",
+        "Condensed display type"
+      ],
+      "viewport": "A week strip, an open meal composition, and an image-led discovery shelf with an Assistant prompt.",
+      "risk": "The week strip must stay a shortcut rather than duplicate the full planner.",
+      "comp": "/Users/arjunakankipati/.codex/worktrees/e802/mealos/.impeccable/mocks/decision/week-and-table.png"
+    },
+    {
+      "id": "dinner-and-discovery",
+      "label": "Dinner & discovery",
+      "thesis": "Tonight is the anchor; a recipe-led feed makes discovery worth opening.",
+      "palette": [
+        "#191918",
+        "#F7F3EA",
+        "#F3AD88"
+      ],
+      "materials": [
+        "Native iOS controls",
+        "Food photography",
+        "Condensed display type"
+      ],
+      "viewport": "A compact tonight feature above a bold food-led recipe suggestion, with shopping and Assistant actions.",
+      "risk": "Discovery takes more screen space than in the other options.",
+      "comp": "/Users/arjunakankipati/.codex/worktrees/e802/mealos/.impeccable/mocks/decision/dinner-and-discovery.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  }
+}
