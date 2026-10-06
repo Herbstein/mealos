@@ -70,7 +70,7 @@ struct RecipeDetail: View {
                 Picker("Portions", selection: $portion) { ForEach(Portion.allCases, id: \.self) { Text($0.label).tag($0) } }
                 Button { cooking = true } label: {
                     Label("Start cooking", systemImage: "play.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 44)
-                }.buttonStyle(.borderedProminent)
+                }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                 Menu("Add to meal plan", systemImage: "calendar.badge.plus") {
                     ForEach(Array(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].enumerated()), id: \.offset) { day, label in
                         Button(label) { store.plan(day: day, recipe: current, portion: portion) }

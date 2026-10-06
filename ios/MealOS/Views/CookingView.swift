@@ -22,12 +22,11 @@ struct CookingView: View {
                     ScrollView { VStack(spacing: 24) { stepPanel; workspace } }
                 }
             }.padding(wide ? 28 : 16)
-                .background(MealTheme.enamel.ignoresSafeArea())
+                .background(MealTheme.background.ignoresSafeArea())
         }
         .toolbar(.hidden, for: .tabBar)
         .navigationTitle(recipe.shortName).navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(MealTheme.enamel, for: .navigationBar).toolbarBackground(.visible, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(MealTheme.background, for: .navigationBar).toolbarBackground(.visible, for: .navigationBar)
         .onAppear { index = min(store.snapshot.cookingSteps[recipe.id] ?? 0, max(0, recipe.steps.count - 1)); UIApplication.shared.isIdleTimerDisabled = true }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .onChange(of: scenePhase) { _, phase in UIApplication.shared.isIdleTimerDisabled = phase == .active }
@@ -56,17 +55,17 @@ struct CookingView: View {
                 Text(recipe.steps[index + 1].equipment).font(.subheadline)
             }
         }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
-            .foregroundStyle(MealTheme.enamel).background(MealTheme.cream, in: RoundedRectangle(cornerRadius: 24))
+            .foregroundStyle(MealTheme.text).background(MealTheme.surface, in: RoundedRectangle(cornerRadius: 24))
     }
     private var previousButton: some View {
         Button { index = max(0, index - 1) } label: { Label("Previous", systemImage: "chevron.left").frame(minHeight: 44) }
-            .buttonStyle(.bordered).tint(MealTheme.enamel).disabled(index == 0)
+            .buttonStyle(.bordered).tint(MealTheme.text).disabled(index == 0)
     }
     private var nextButton: some View {
         Button { if index + 1 < recipe.steps.count { index += 1 } else { finished = true } } label: {
             Label(index + 1 < recipe.steps.count ? "Next step" : "Finish cooking", systemImage: index + 1 < recipe.steps.count ? "chevron.right" : "checkmark")
                 .font(.headline).frame(maxWidth: .infinity, minHeight: 44)
-        }.buttonStyle(.borderedProminent).tint(Color(red: 0.69, green: 0.23, blue: 0.035)).foregroundStyle(.white)
+        }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
     }
     private var workspace: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -74,22 +73,22 @@ struct CookingView: View {
                 Text("At your station").font(MealTheme.display(34))
                 Text(portion.label).font(.subheadline)
                 IngredientList(recipe: recipe, portion: portion)
-            }.padding(24).foregroundStyle(MealTheme.enamel).background(MealTheme.cream, in: RoundedRectangle(cornerRadius: 24))
+            }.padding(24).foregroundStyle(MealTheme.text).background(MealTheme.surface, in: RoundedRectangle(cornerRadius: 24))
             let timers = store.snapshot.timers.filter { $0.endAt != nil || $0.remaining < $0.duration }
             if !timers.isEmpty {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Timers on this device").font(.title2.weight(.semibold)).foregroundStyle(MealTheme.cream)
+                    Text("Timers on this device").font(.title2.weight(.semibold)).foregroundStyle(MealTheme.text)
                     ForEach(timers) { timer in TimerControl(id: timer.id, label: timer.label, duration: Int(timer.duration)) }
                 }
             }
             if let notice = store.timerNotice {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(notice).foregroundStyle(MealTheme.cream)
-                    if let url = URL(string: UIApplication.openSettingsURLString) { Link("Open notification settings", destination: url).tint(MealTheme.yellow) }
+                    Text(notice).foregroundStyle(MealTheme.text)
+                    if let url = URL(string: UIApplication.openSettingsURLString) { Link("Open notification settings", destination: url).tint(MealTheme.action) }
                 }
             }
             if !recipe.leftoverNote.isEmpty {
-                VStack(alignment: .leading, spacing: 12) { Text("Lunch tomorrow").font(.headline); Text(recipe.leftoverNote) }.foregroundStyle(MealTheme.cream)
+                VStack(alignment: .leading, spacing: 12) { Text("Lunch tomorrow").font(.headline); Text(recipe.leftoverNote) }.foregroundStyle(MealTheme.text)
             }
         }
     }
@@ -115,9 +114,9 @@ struct TimerControl: View {
                         else { Task { await store.startTimer(id: id, label: label, duration: duration) } }
                     } label: { Label(running ? "Pause" : seconds == 0 ? "Restart" : "Start", systemImage: running ? "pause.fill" : "play.fill").frame(minHeight: 44) }
                     Button("Reset") { store.resetTimer(id) }.frame(minWidth: 44, minHeight: 44)
-                }.buttonStyle(.bordered).tint(MealTheme.cream)
+                }.buttonStyle(.bordered).tint(MealTheme.ivory)
             }.padding(18).frame(maxWidth: .infinity, alignment: .leading)
-                .foregroundStyle(MealTheme.cream).background(MealTheme.enamel, in: RoundedRectangle(cornerRadius: 16))
+                .foregroundStyle(MealTheme.ivory).background(MealTheme.charcoal, in: RoundedRectangle(cornerRadius: 16))
         }
     }
 }

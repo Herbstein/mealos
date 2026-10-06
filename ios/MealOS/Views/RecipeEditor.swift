@@ -58,7 +58,8 @@ struct RecipeEditor: View {
                     Section("Before saving") { ForEach(recipe.validationErrors, id: \.self) { Text($0).foregroundStyle(.red) } }
                 }
                 Section { Button("Preview cooking view", systemImage: "play.rectangle") { prepareNames(); if recipe.validationErrors.isEmpty { preview = true } else { showErrors = true } } }
-            }.navigationTitle(imported ? "Review recipe" : original.name.isEmpty ? "New recipe" : "Edit recipe")
+            }.scrollContentBackground(.hidden).background(MealTheme.background)
+                .navigationTitle(imported ? "Review recipe" : original.name.isEmpty ? "New recipe" : "Edit recipe")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if dirty { discard = true } else { dismiss() } } }

@@ -19,6 +19,20 @@ final class MealOSUITests: XCTestCase {
         button.tap()
     }
     func testPlanShopCookAndRestore() throws {
+        func showGrocery(_ row: XCUIElement) {
+            XCTAssertTrue(app.navigationBars["Grocery list"].waitForExistence(timeout: 10))
+            let list = app.collectionViews.firstMatch
+            XCTAssertTrue(list.waitForExistence(timeout: 10))
+            // In landscape, the shopping-window section fills the first viewport.
+            // SwiftUI's List may not expose a grocery row until it scrolls into view.
+            for _ in 0..<8 {
+                if row.exists && row.isHittable { return }
+                // Keep the drag between the bars, including on a short landscape screen.
+                list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                    .press(forDuration: 0.1, thenDragTo: list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)))
+            }
+            XCTAssertTrue(row.exists && row.isHittable, "Grocery row not visible after scrolling\n\(app.debugDescription)")
+        }
         XCTAssertTrue(app.navigationBars["Meal plan"].waitForExistence(timeout: 20))
         capture("01-plan-empty")
         tap("Plan tonight")
@@ -28,7 +42,7 @@ final class MealOSUITests: XCTestCase {
         capture("02-plan-selected")
         tap("Shop")
         let grocery = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Baby potatoes,")).firstMatch
-        XCTAssertTrue(grocery.waitForExistence(timeout: 10)); grocery.tap()
+        showGrocery(grocery); grocery.tap()
         XCTAssertTrue(grocery.label.hasSuffix(", checked"))
         capture("03-groceries")
         tap("Plan"); tap("Start cooking")
@@ -52,7 +66,8 @@ final class MealOSUITests: XCTestCase {
         app.launch()
         tap("Shop")
         let restored = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Baby potatoes,")).firstMatch
-        XCTAssertTrue(restored.waitForExistence(timeout: 10)); XCTAssertTrue(restored.label.hasSuffix(", checked"))
+        showGrocery(restored)
+        XCTAssertTrue(restored.label.hasSuffix(", checked"))
         tap("Plan"); tap("Start cooking")
         XCTAssertTrue(app.staticTexts["Start the potatoes"].firstMatch.waitForExistence(timeout: 10))
         capture("07-cooking-restored")

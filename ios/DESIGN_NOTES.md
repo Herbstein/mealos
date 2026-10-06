@@ -2,27 +2,26 @@
 
 ## Overview
 
-This is the native Apple-platform extension of the **Mise en Place Board** in [the inherited design system](../DESIGN.md), informed by [the product brief](../PRODUCT.md). The authorized scope is a universal iPhone/iPad app with shared product features and single- or two-pane cooking. The Android brand remains the visual authority; this document records SwiftUI adaptations, not a replacement identity or changes to the Android specification.
+This is the native Apple-platform extension of the **Mise en Place Board** in [the inherited design system](../DESIGN.md), informed by [the product brief](../PRODUCT.md). The authorized scope is a universal iPhone/iPad app with shared product features and single- or two-pane cooking. The palette below is the current Apple visual authority; the inherited Android specification is historical.
 
 Evidence: source review of `MealOS/Views/*.swift`, especially `Theme.swift`, and the app-level tint in `MealOSApp.swift`. This original source review is supplemented by the [September 10 simulator validation](validation/2026-09-10/REPORT.md). Values below describe implementation decisions; the report identifies which device configurations were actually rendered and tested.
 
 ## Colors
 
-The native theme retains deep enamel, warm cream reading surfaces, warm action accents, and yellow timing state. `Theme.swift` is the native implementation source of truth. Its normalized RGB values are approximately the inherited enamel and cream, with the following deliberate implementation differences:
+As of October 6, 2026, the Apple client uses the installed dark icon as its palette reference: charcoal, soft peach, butter yellow, and warm ivory. This supersedes the inherited green/orange palette for iPhone and iPad. `Theme.swift` owns the implementation.
 
-| Native role | Source value | Application |
+| Role | Light | Dark |
 | --- | --- | --- |
-| Enamel | RGB 0.031, 0.196, 0.141 | Fixed cooking ground, timer wells, planning hero, user turns |
-| Cream | RGB 0.953, 0.941, 0.910 | Fixed reading trays and light content on enamel |
-| Timer yellow | RGB 0.898, 0.780, 0.420 | Countdown and notification-settings recovery link; close to inherited dark tertiary |
-| Action, light | RGB 0.69, 0.23, 0.035 | App tint; a darker orange than inherited decisive orange |
-| Action, dark | RGB 1, 0.70, 0.55 | Adaptive app tint, close to inherited soft apricot |
-| Background, light | Cream | Planning, library, details, groceries, Assistant, settings |
-| Background, dark | RGB 0.024, 0.110, 0.078 | Dark enamel background for those same screens |
+| Canvas | Ivory `#F7F3EA` | Charcoal `#191918` |
+| Custom reading panel | `#FFFCF6` | Raised charcoal `#272725` |
+| Custom panel text | `#242321` | Ivory `#F7F3EA` |
+| Links, tint, selection | Deep peach `#984C31` | Peach `#F3AD88` |
+| Primary filled action | Peach `#F3AD88` with charcoal `#191918` labels | Same |
+| Timer digits | Butter yellow `#E7CE70` on charcoal | Same |
 
-System list rows, forms, secondary text, and fields retain native semantic colors. This is a partial native palette mapping, not a port of every Material color role.
+Cooking panels and navigation now follow system appearance. The planning feature panel and timer wells remain charcoal in both appearances. Yellow is reserved for timing; notification recovery links use the action tint. Native list rows, forms, secondary labels, errors, separators, and material bars retain semantic system colours and accessibility behaviour. Assistant reading panels adapt to appearance, while user messages use ivory on charcoal.
 
-Cooking remains fixed cream-on-enamel in both appearances, including a dark navigation-bar color scheme. The tab bar is hidden while cooking, leaving the system Back control for navigation. Its Next/Finish action explicitly uses the darker orange with white text rather than the adaptive global tint. The planning hero uses cream actions on enamel. Assistant turns keep fixed enamel/cream pairings in both appearances, while its background, composer field, and material shelf adapt to the system. Check all these pairings in rendered light and dark mode before accepting contrast or consistency.
+Use native prominent buttons with explicit peach fill and charcoal labels. Pale peach is not suitable for standalone text on ivory, and white labels should not be used on peach. The icon artwork remains unchanged.
 
 ## Typography
 
@@ -44,7 +43,7 @@ Cooking Previous/Next controls use `ViewThatFits` to change from a horizontal ro
 
 ## Elevation & Depth
 
-Cooking uses flat tonal surfaces without explicit custom shadows, preserving the enamel-and-prep-paper character. Native lists and forms supply their platform container treatment. The Assistant composer and cloud-loading overlay use SwiftUI regular material. These are native utility surfaces; the inherited identity remains tonal rather than decorative glass. Actual translucency, reduced-transparency behavior, and separation from scrolling content remain unverified.
+Cooking uses flat tonal surfaces without explicit custom shadows, using charcoal and ivory tonal layers. Native lists and forms supply their platform container treatment. The Assistant composer and cloud-loading overlay use SwiftUI regular material. These are native utility surfaces; the inherited identity remains tonal rather than decorative glass. Actual translucency, reduced-transparency behavior, and separation from scrolling content remain unverified.
 
 ## Shapes
 
@@ -53,7 +52,7 @@ Native cooking trays use 24 pt rounded corners and 24 pt interior padding; timer
 ## Components
 
 - **Navigation:** Five labeled tabs—Plan, Recipes, Shop, Assistant, Settings—each host a `NavigationStack`. This replaces the Android hidden drawer with native navigation. Inspect the OS-specific tab presentation on iPad; no custom permanent sidebar is implemented here.
-- **Cooking:** A large current action, instruction, optional tip/timer, Previous/Next controls, and an inline “Up next” preview share the cream step tray. Ingredients occupy a separate cream tray. Active or previously started timers appear below it, followed by notification recovery and leftover guidance when present. The Android discrete progress rule and circular timer controls are not reproduced.
+- **Cooking:** A large current action, instruction, optional tip/timer, Previous/Next controls, and an inline “Up next” preview share the appearance-adaptive step tray. Ingredients occupy a separate appearance-adaptive tray. Active or previously started timers appear below it, followed by notification recovery and leftover guidance when present. The Android discrete progress rule and circular timer controls are not reproduced.
 - **Timers:** Named countdown wells expose Start/Pause/Restart and Reset, with a spoken minutes-and-seconds label. Running state is also expressed in text and icons. All eligible device timers are listed; the Android two-timer shelf limit and +1 minute action are not present in this UI.
 - **Touch and semantics:** Many explicit controls use minimum 44 pt height, and key icon controls use a 44 by 44 pt frame; some planning and review actions use 48 pt minimum height. Grocery rows expose quantity and checked state to accessibility. Cooking titles carry a header trait. These declarations do not establish that every target, reading order, or spoken state is correct.
 - **Recipe authoring:** A native form groups recipe basics, ingredients, and cooking steps. Edit mode provides reorder/delete. Imported status and validation remain in the editor; Save is a toolbar action rather than Android's persistent full-width save shelf. Dirty forms disable interactive dismissal and Cancel opens an alert with explicit Keep editing and Discard changes actions on both phone and tablet. This avoids the system popover omitting a cancel-role action.
@@ -62,7 +61,7 @@ Native cooking trays use 24 pt rounded corners and 24 pt interior padding; timer
 
 ## Do's and Don'ts
 
-Do preserve the inherited enamel/cream station and condensed action language. Do retain explicit draft review, readable cooking instructions, visible timer recovery, and native navigation semantics. Do base cooking expansion on available window width and keep accessibility categories in one column. Do treat the differences above as current implementation facts, not evidence that every Android visual feature has been reproduced.
+Do preserve the charcoal/ivory station, peach actions, yellow timers, and condensed action language. Do retain explicit draft review, readable cooking instructions, visible timer recovery, and native navigation semantics. Do base cooking expansion on available window width and keep accessibility categories in one column. Do treat the differences above as current implementation facts, not evidence that every Android visual feature has been reproduced.
 
 Don't claim screenshot, accessibility, contrast, device, or visual approval from source inspection. Don't treat device class, screen resolution, or a wide simulator window as proof of usable two-pane layout.
 
@@ -73,5 +72,5 @@ Don't claim screenshot, accessibility, contrast, device, or visual approval from
 - Repeat cooking and authoring at standard, largest non-accessibility, and all accessibility Dynamic Type categories. Confirm accessibility sizes stack cooking; check long recipe names, instructions, equipment names, ingredient quantities, timer labels, and horizontal editor rows. Verify reading distance and touch targets with practical kitchen use.
 - Use VoiceOver to traverse tabs, steps, ingredients, timer controls, grocery checkmarks, fields, validation, sheets, and dialogs. Check focus after step changes, modal dismissal, and errors; verify timer updates do not cause disruptive announcements. Test external-keyboard navigation on iPad.
 - Open the keyboard in notes, authoring, and Assistant at narrow and wide window sizes. Confirm the composer, Send, Save, Cancel, and validation remain reachable, including with long content. Verify unsaved-work dismissal and draft-review flows.
-- Measure rendered contrast for fixed cream/enamel panels, adaptive orange/apricot actions, disabled controls, yellow timers, native secondary text, and material surfaces. Include Increase Contrast, Reduce Transparency, and Bold Text.
+- Measure rendered contrast for adaptive ivory/charcoal panels, peach actions, disabled controls, yellow timers, native secondary text, and material surfaces. Include Increase Contrast, Reduce Transparency, and Bold Text.
 - Exercise empty, loading, retry, error, notification-denied, timer-running/paused/finished, imported-draft, and long-content states. On physical hardware, check scanner/photo sheets and timer notification recovery under foreground/background, relaunch, Focus, and notification-setting changes. These are required behavior checks, not completed validation.

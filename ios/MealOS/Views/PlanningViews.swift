@@ -34,14 +34,14 @@ struct PlanView: View {
                         Text(entry.portion.label).font(.subheadline)
                         Button { cooking = true } label: {
                             Label("Start cooking", systemImage: "play.fill").font(.headline).frame(maxWidth: .infinity, minHeight: 48)
-                        }.buttonStyle(.borderedProminent).tint(MealTheme.cream).foregroundStyle(MealTheme.enamel)
+                        }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                     } else {
                         Text("Choose tonight’s meal, then let your grocery list take shape.")
                         Button("Plan tonight") { selectedDay = DaySelection(id: today) }
-                            .buttonStyle(.borderedProminent).tint(MealTheme.cream).foregroundStyle(MealTheme.enamel).controlSize(.large)
+                            .buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal).controlSize(.large)
                     }
-                }.padding(.vertical, 14).foregroundStyle(MealTheme.cream)
-            }.listRowBackground(MealTheme.enamel)
+                }.padding(.vertical, 14).foregroundStyle(MealTheme.ivory)
+            }.listRowBackground(MealTheme.charcoal)
             Section { WeekNavigation(start: $weekStart) }
             Section("Your week") {
                 ForEach(Array(weekStart..<(weekStart + 7)), id: \.self) { day in

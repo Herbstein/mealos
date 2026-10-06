@@ -146,6 +146,8 @@ components:
 
 # Design System: MealOS
 
+> **Active Apple palette (October 6, 2026):** Forkware now uses charcoal, peach, butter yellow, and ivory, inspired by the installed dark-mode icon. [Native design notes](ios/DESIGN_NOTES.md#colors) and `ios/MealOS/Views/Theme.swift` define the current roles. The green/orange tokens below remain historical Android documentation.
+
 > Android was deprecated on October 6, 2026. Android, Material, and fold-specific implementation guidance below is historical reference. Apply the shared visual identity to the active Apple client using native iPhone and iPad patterns.
 
 ## Overview

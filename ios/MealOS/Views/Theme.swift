@@ -1,15 +1,28 @@
 import SwiftUI
 
 enum MealTheme {
-    static let enamel = Color(red: 0.031, green: 0.196, blue: 0.141)
-    static let cream = Color(red: 0.953, green: 0.941, blue: 0.910)
-    static let yellow = Color(red: 0.898, green: 0.780, blue: 0.420)
-    static let action = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark ? UIColor(red: 1, green: 0.70, blue: 0.55, alpha: 1) : UIColor(red: 0.69, green: 0.23, blue: 0.035, alpha: 1)
-    })
-    static let background = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark ? UIColor(red: 0.024, green: 0.110, blue: 0.078, alpha: 1) : UIColor(red: 0.953, green: 0.941, blue: 0.910, alpha: 1)
-    })
+    // Fixed brand colours, paired explicitly on filled actions and dark feature panels.
+    static let charcoal = Color(uiColor: rgb(0x191918))
+    static let ivory = Color(uiColor: rgb(0xF7F3EA))
+    static let peach = Color(uiColor: rgb(0xF3AD88))
+    static let yellow = Color(uiColor: rgb(0xE7CE70))
+
+    // Standalone controls need a deeper peach in light mode; filled actions keep peach.
+    static let action = adaptive(light: 0x984C31, dark: 0xF3AD88)
+    static let background = adaptive(light: 0xF7F3EA, dark: 0x191918)
+    static let surface = adaptive(light: 0xFFFCF6, dark: 0x272725)
+    static let text = adaptive(light: 0x242321, dark: 0xF7F3EA)
+
+    private static func rgb(_ hex: UInt32) -> UIColor {
+        UIColor(red: CGFloat((hex >> 16) & 255) / 255,
+                green: CGFloat((hex >> 8) & 255) / 255,
+                blue: CGFloat(hex & 255) / 255, alpha: 1)
+    }
+    private static func adaptive(light: UInt32, dark: UInt32) -> Color {
+        Color(uiColor: UIColor { traits in
+            rgb(traits.userInterfaceStyle == .dark ? dark : light)
+        })
+    }
     static func display(_ size: CGFloat = 38) -> Font { .custom("BarlowCondensed-SemiBold", size: size, relativeTo: .largeTitle) }
 }
 struct RecipeRow: View {

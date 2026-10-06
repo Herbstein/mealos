@@ -27,8 +27,8 @@ struct AssistantView: View {
                             Text(message.role == "user" ? "You" : "Recipe Assistant").font(.headline)
                             Text(message.content).textSelection(.enabled)
                         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                            .foregroundStyle(message.role == "user" ? MealTheme.cream : MealTheme.enamel)
-                            .background(message.role == "user" ? MealTheme.enamel : MealTheme.cream, in: RoundedRectangle(cornerRadius: 20))
+                            .foregroundStyle(message.role == "user" ? MealTheme.ivory : MealTheme.text)
+                            .background(message.role == "user" ? MealTheme.charcoal : MealTheme.surface, in: RoundedRectangle(cornerRadius: 20))
                             .id(message.id)
                     }
                     if !store.assistant.sources.isEmpty {
@@ -41,7 +41,7 @@ struct AssistantView: View {
                     }
                     ForEach(store.assistant.questions, id: \.self) { question in Text(question).font(.headline) }
                     if let recipe = store.assistant.draft {
-                        Button { draft = recipe } label: { Label("Review \(recipe.shortName)", systemImage: "square.and.pencil").font(.headline).frame(maxWidth: .infinity, minHeight: 48) }.buttonStyle(.borderedProminent)
+                        Button { draft = recipe } label: { Label("Review \(recipe.shortName)", systemImage: "square.and.pencil").font(.headline).frame(maxWidth: .infinity, minHeight: 48) }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                     }
                     if store.sending { ProgressView("Working on your recipe…").frame(maxWidth: .infinity, minHeight: 44) }
                     if !store.sending, store.assistant.messages.last?.role == "user" {
@@ -92,7 +92,7 @@ struct AssistantView: View {
                     let text = composer.trimmingCharacters(in: .whitespacesAndNewlines)
                     store.updateAssistant { $0.messages.append(AssistantMessage(role: "user", content: text)) }; composer = ""
                     Task { await RecipeAssistant.send(store: store, cloud: cloud) }
-                } label: { Label("Send", systemImage: "arrow.up").frame(minHeight: 44) }.buttonStyle(.borderedProminent)
+                } label: { Label("Send", systemImage: "arrow.up").frame(minHeight: 44) }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                     .disabled(composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.sending || scanning)
             }.disabled(scanning)
         }.padding(.horizontal, 20).padding(.vertical, 12).frame(maxWidth: 840).frame(maxWidth: .infinity).background(.regularMaterial)
