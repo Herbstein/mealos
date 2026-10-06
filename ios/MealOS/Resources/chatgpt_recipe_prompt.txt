@@ -1,0 +1,49 @@
+Create one recipe for MealOS and return only valid JSON—no Markdown fence and no explanation.
+
+Design preferences:
+- Familiar, low-effort meals with minimal cleanup.
+- Avoid seafood and mushrooms. Do not make pork a main ingredient.
+- Prefer the Ninja CRISPi DualZone glass air fryer, rice cooker, Ooni Volt, toaster, microwave, or ordinary pots and pans.
+- Make equipment-specific instructions explicit.
+- Include a useful leftover plan, especially for “dinner + lunch tomorrow.”
+- Each step must make sense when shown alone in a large cooking view.
+- Add timerSeconds whenever a step benefits from a timer.
+
+Return this exact document shape:
+{
+  "format": "mealos.recipe",
+  "schemaVersion": 1,
+  "recipe": {
+    "name": "Full recipe name",
+    "shortName": "Compact name",
+    "description": "One useful sentence",
+    "effortMinutes": 10,
+    "totalMinutes": 30,
+    "baseServings": 2,
+    "equipment": ["CRISPi"],
+    "tags": ["Low effort", "Great leftovers"],
+    "leftoverNote": "How to pack and reheat the extra portion.",
+    "ingredients": [
+      {
+        "id": "lowercase-stable-ingredient-name",
+        "name": "Display ingredient name",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Short action title",
+        "instruction": "Complete equipment-specific instruction.",
+        "equipment": "CRISPi basket 1",
+        "timerSeconds": 600,
+        "tip": "Optional useful tip"
+      }
+    ]
+  }
+}
+
+Allowed ingredient categories: PRODUCE, MEAT, DAIRY, BAKERY, PANTRY, FROZEN.
+Use numeric amounts greater than zero. Use simple units such as count, pieces, tsp, tbsp, cup, cups, oz, lb, g, kg, pint, bunch, leaves, slices, or cans. Omit timerSeconds and tip when they are not needed. Check that every ingredient is used and every avoided food is absent before returning the JSON.

@@ -4,15 +4,15 @@
 
 ## Platform
 
-android
+adaptive
 
 ## Stack
 
-Native Android app. Kotlin and Jetpack Compose were delegated to Codex as the recommended implementation for a foldable-first, offline-first experience.
+Native Android app in Kotlin and Jetpack Compose, plus a universal iPhone/iPad app in SwiftUI. Both retain the same offline-first meal model and share Firebase account data and the Railway recipe assistant.
 
 ## Users
 
-The primary user is the owner of a Samsung Galaxy Z Fold8 Ultra who wants to choose familiar meals, plan a week, shop once, and follow clear cooking steps without juggling multiple apps or paper notes.
+The primary user wants to choose familiar meals, plan a week, shop once, and follow clear cooking steps without juggling multiple apps or paper notes. The original Android app targets a Samsung Galaxy Z Fold8 Ultra; the Apple client supports a regular iPhone for planning/shopping and an iPad as a kitchen screen.
 
 ## Product Purpose
 
@@ -22,10 +22,13 @@ MealOS turns a small, repeatable meal rotation into a low-effort weekly cooking 
 
 MealOS treats the foldable device as a kitchen work surface: the cover screen is a fast planner and shopping companion, while the unfolded screen becomes a two-pane cooking station with steps, ingredients, and timers visible together.
 
+The Apple app gives the iPhone emphasis on planning and shopping, while the iPad provides a spacious cooking station. Essential features remain available on both. Cooking timers and step positions remain device-local; live cloud handoff is deferred.
+
 ## Operating Context
 
 - Used at home while planning, shopping, and cooking.
-- Primary hardware target: Samsung Galaxy Z Fold8 Ultra.
+- Android hardware target: Samsung Galaxy Z Fold8 Ultra.
+- Apple hardware: regular iPhone and iPad, with layouts based on available window space.
 - Target display resolutions: 2520 × 1080 cover display and 2504 × 2256 unfolded display.
 - Available cooking equipment: Ninja CRISPi DualZone glass air fryer, rice cooker, Ooni Volt, toaster, microwave, and standard pots and pans.
 - Meals should favor familiar flavors, low hands-on effort, reusable ingredients, leftovers, and minimal cleanup.

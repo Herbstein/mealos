@@ -2,7 +2,11 @@
 
 MealOS is a local-first Android meal planner built for the Samsung Galaxy Z Fold8 Ultra. It combines a 15-recipe core rotation, weekly planning, consolidated grocery lists, pantry exclusions, favorites, notes, ratings, leftovers, and a fold-aware cooking mode with timers.
 
-## Run it
+## iPhone and iPad
+
+The universal SwiftUI client lives in [`ios/`](ios/README.md). Open `ios/Forkware.xcodeproj` in full Xcode. It shares the existing Firebase library and Railway assistant, with compact phone layouts and a two-pane iPad cooking view. See the Apple client README for setup and current validation limits.
+
+## Run Android
 
 Open the project in Android Studio, select an Android 13+ device, and run the `app` configuration.
 

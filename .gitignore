@@ -7,3 +7,15 @@ local.properties
 *.iml
 captures/
 .release/
+
+# Apple client local state and signing/configuration
+.DS_Store
+ios/.build/
+ios/.swiftpm/
+ios/DerivedData/
+**/xcuserdata/
+ios/Config.local.xcconfig
+firebase-debug.log
+ios/scripts/__pycache__/
+
+ios/.release.env

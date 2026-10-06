@@ -1,0 +1,40 @@
+{
+  "method": "Built-in image_gen",
+  "concepts": [
+    {
+      "id": "01-fork-circuit",
+      "title": "Circuit Fork",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Circuit Fork. A confident upright dining fork whose three tines subtly become circuit traces ending in small round nodes. Extremely simple silhouette, thick balanced strokes, food recognized before technology. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"01 / Circuit Fork\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "02-fl-monogram",
+      "title": "FL Monogram",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: FL Monogram. An ingenious compact FL monogram: the F is subtly a dining fork with horizontal prongs, the L forms its supporting base. Legible abstract letterform, precise geometric construction, strong negative space. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"02 / FL Monogram\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "03-logic-plate",
+      "title": "Logic Plate",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Logic Plate. A circular dinner plate outline with a simple fork integrated into its left edge and a small deliberate gap on its right suggesting a logic gate. Elegant circular symbol, reduced to the fewest possible lines. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"03 / Logic Plate\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "04-fork-branch",
+      "title": "Fork Branch",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Fork Branch. A bold three-pronged dining fork made from a software branching diagram: one stem splits cleanly into three upward tines, with subtle terminal nodes. An organic utensil silhouette with engineered geometry. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"04 / Fork Branch\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "05-code-fork",
+      "title": "Code Fork",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Code Fork. A single dining fork enclosed by two compact angle brackets, integrated into one cohesive compact emblem. Clever food meets code, robust balanced strokes, restrained and contemporary rather than a developer sticker. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"05 / Code Fork\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "06-pixel-bite",
+      "title": "Pixel Bite",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Pixel Bite. A striking geometric fork head built from a few solid square modules, with one missing square suggesting a bite. A distinctive compact pixel-built utensil mark that remains recognizable at small app-icon sizes. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"06 / Pixel Bite\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    },
+    {
+      "id": "07-wordmark",
+      "title": "Integrated Wordmark",
+      "prompt": "Use case: logo-brand. Create ONE polished distinct logo concept for ForkLogic, a recipe organizer, meal planner and cooking app. Direction: Integrated Wordmark. A custom typographic logo in which the initial F of ForkLogic is subtly constructed as a dining fork, with the remaining letters a beautifully kerned humanist geometric sans serif. Food-tech character built directly into lettering. Include a small standalone version of that fork F beneath the wordmark. White background, flat near-black artwork, crisp vector-like edges, generous whitespace, no gradients, no shadows, no 3D or mockups. Square presentation. Center the main symbol above the wordmark \"ForkLogic\" in well-spaced contemporary typography, except for the integrated-wordmark direction where the wordmark is the main subject. Exact brand spelling: ForkLogic. Place a small understated concept label \"07 / Integrated Wordmark\" along the bottom. Strong professional design, usable silhouette, subtle tech cues, no chef hats, no leaves, no extra slogans."
+    }
+  ]
+}

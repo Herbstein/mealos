@@ -1,0 +1,77 @@
+# MealOS native iPhone and iPad design notes
+
+## Overview
+
+This is the native Apple-platform extension of the **Mise en Place Board** in [the inherited design system](../DESIGN.md), informed by [the product brief](../PRODUCT.md). The authorized scope is a universal iPhone/iPad app with shared product features and single- or two-pane cooking. The Android brand remains the visual authority; this document records SwiftUI adaptations, not a replacement identity or changes to the Android specification.
+
+Evidence: source review of `MealOS/Views/*.swift`, especially `Theme.swift`, and the app-level tint in `MealOSApp.swift`. This original source review is supplemented by the [September 10 simulator validation](validation/2026-09-10/REPORT.md). Values below describe implementation decisions; the report identifies which device configurations were actually rendered and tested.
+
+## Colors
+
+The native theme retains deep enamel, warm cream reading surfaces, warm action accents, and yellow timing state. `Theme.swift` is the native implementation source of truth. Its normalized RGB values are approximately the inherited enamel and cream, with the following deliberate implementation differences:
+
+| Native role | Source value | Application |
+| --- | --- | --- |
+| Enamel | RGB 0.031, 0.196, 0.141 | Fixed cooking ground, timer wells, planning hero, user turns |
+| Cream | RGB 0.953, 0.941, 0.910 | Fixed reading trays and light content on enamel |
+| Timer yellow | RGB 0.898, 0.780, 0.420 | Countdown and notification-settings recovery link; close to inherited dark tertiary |
+| Action, light | RGB 0.69, 0.23, 0.035 | App tint; a darker orange than inherited decisive orange |
+| Action, dark | RGB 1, 0.70, 0.55 | Adaptive app tint, close to inherited soft apricot |
+| Background, light | Cream | Planning, library, details, groceries, Assistant, settings |
+| Background, dark | RGB 0.024, 0.110, 0.078 | Dark enamel background for those same screens |
+
+System list rows, forms, secondary text, and fields retain native semantic colors. This is a partial native palette mapping, not a port of every Material color role.
+
+Cooking remains fixed cream-on-enamel in both appearances, including a dark navigation-bar color scheme. The tab bar is hidden while cooking, leaving the system Back control for navigation. Its Next/Finish action explicitly uses the darker orange with white text rather than the adaptive global tint. The planning hero uses cream actions on enamel. Assistant turns keep fixed enamel/cream pairings in both appearances, while its background, composer field, and material shelf adapt to the system. Check all these pairings in rendered light and dark mode before accepting contrast or consistency.
+
+## Typography
+
+Barlow Condensed SemiBold retains the compact display character. `MealTheme.display` uses `.custom("BarlowCondensed-SemiBold", size: ..., relativeTo: .largeTitle)`, so the source opts into Dynamic Type scaling. The default display size is 38 pt; the planning and Assistant introduction use 44 pt, the cooking step uses 48 pt, the station heading uses 34 pt, and the settings statement uses 30 pt.
+
+Body and control text use native semantic SwiftUI styles rather than the Android Material body family. Cooking instructions use `.title2`; timer digits use the rounded system `.largeTitle` with monospaced digits. Display and instruction text in cooking explicitly allow vertical expansion. Font loading, wrapping, line height, and arm's-length readability still require device review.
+
+## Layout
+
+Measurements here are logical Apple points, not Android dp or physical display pixels.
+
+Cooking measures **available view width** with `GeometryReader`. At 720 pt or wider, and only when Dynamic Type is below an accessibility category, the current-step panel and station workspace receive equal flexible widths in a top-aligned horizontal layout. Each pane scrolls independently. The gap is 24 pt, with 28 pt outer padding. Below 720 pt, or at any accessibility text category, the panels stack in one scroll view with 24 pt separation and 16 pt outer padding. This keeps the breakpoint meaningful for iPad window resizing and multitasking instead of assuming that every iPad has room for two panes.
+
+The Android folding-feature seam is not reproduced. The native app uses a spacing gap, with no hardware-hinge rule. Current-step state is owned outside the layout branch and changes persist through the store; reflow is intended to retain the selected step. Scroll views are recreated between branches, so useful scroll-position preservation is not established by this source review.
+
+Other screens use native lists, forms, navigation stacks, and sheets. The editor remains one form at all widths, replacing the Android 300 dp section outline and split preview composition. Preview opens the native cooking view. Assistant remains one conversation column at all widths, with content capped at 800 pt and a composer capped at 840 pt. It does not implement the Android equal-width conversation/proof panes; draft review opens the editor in a sheet.
+
+Cooking Previous/Next controls use `ViewThatFits` to change from a horizontal row to a vertical arrangement when needed. The vertical arrangement puts Next first. Other horizontal rows, including ingredient quantities, timer controls, and editor fields, have no equivalent explicit accessibility reflow and need large-text QA.
+
+## Elevation & Depth
+
+Cooking uses flat tonal surfaces without explicit custom shadows, preserving the enamel-and-prep-paper character. Native lists and forms supply their platform container treatment. The Assistant composer and cloud-loading overlay use SwiftUI regular material. These are native utility surfaces; the inherited identity remains tonal rather than decorative glass. Actual translucency, reduced-transparency behavior, and separation from scrolling content remain unverified.
+
+## Shapes
+
+Native cooking trays use 24 pt rounded corners and 24 pt interior padding; timer wells use 16 pt corners and 18 pt padding. Assistant turns use 20 pt corners and padding, and its input uses 12 pt corners and padding. These are source-level adaptations of the inherited nested-tray vocabulary, not exact copies of Android's 28/22/18 dp scale. Native controls retain their system silhouette.
+
+## Components
+
+- **Navigation:** Five labeled tabs—Plan, Recipes, Shop, Assistant, Settings—each host a `NavigationStack`. This replaces the Android hidden drawer with native navigation. Inspect the OS-specific tab presentation on iPad; no custom permanent sidebar is implemented here.
+- **Cooking:** A large current action, instruction, optional tip/timer, Previous/Next controls, and an inline “Up next” preview share the cream step tray. Ingredients occupy a separate cream tray. Active or previously started timers appear below it, followed by notification recovery and leftover guidance when present. The Android discrete progress rule and circular timer controls are not reproduced.
+- **Timers:** Named countdown wells expose Start/Pause/Restart and Reset, with a spoken minutes-and-seconds label. Running state is also expressed in text and icons. All eligible device timers are listed; the Android two-timer shelf limit and +1 minute action are not present in this UI.
+- **Touch and semantics:** Many explicit controls use minimum 44 pt height, and key icon controls use a 44 by 44 pt frame; some planning and review actions use 48 pt minimum height. Grocery rows expose quantity and checked state to accessibility. Cooking titles carry a header trait. These declarations do not establish that every target, reading order, or spoken state is correct.
+- **Recipe authoring:** A native form groups recipe basics, ingredients, and cooking steps. Edit mode provides reorder/delete. Imported status and validation remain in the editor; Save is a toolbar action rather than Android's persistent full-width save shelf. Dirty forms disable interactive dismissal and Cancel opens an alert with explicit Keep editing and Discard changes actions on both phone and tablet. This avoids the system popover omitting a cancel-role action.
+- **Assistant:** Sources, clarification questions, progress, retry, and explicit draft review remain visible in the conversation. The composer sits in a bottom safe-area inset, uses a multiline system field, and separates scanning, photo selection, and Send. Sending disables blank or busy submissions. Clearing a conversation requires a native confirmation dialog.
+- **Shared workflows:** The native views expose planning, portions, recipe browsing, groceries, pantry, favorites, ratings, notes, import/export, authoring, cooking, Assistant, and account/settings entry points. UI presence alone does not verify service behavior or cross-platform data parity.
+
+## Do's and Don'ts
+
+Do preserve the inherited enamel/cream station and condensed action language. Do retain explicit draft review, readable cooking instructions, visible timer recovery, and native navigation semantics. Do base cooking expansion on available window width and keep accessibility categories in one column. Do treat the differences above as current implementation facts, not evidence that every Android visual feature has been reproduced.
+
+Don't claim screenshot, accessibility, contrast, device, or visual approval from source inspection. Don't treat device class, screen resolution, or a wide simulator window as proof of usable two-pane layout.
+
+### Required device QA before visual acceptance
+
+- Build and run on supported iPhone and iPad hardware or simulators; verify the bundled Barlow face loads and inspect every primary destination in light and dark mode.
+- Inspect compact iPhone portrait and landscape, full-width iPad portrait and landscape, and supported iPad multitasking/window widths immediately below and above 720 pt. Confirm no clipped text or controls, useful pane proportions, reachable navigation, safe-area clearance, and retained step/timer state during resizing and rotation. Check scroll continuity explicitly.
+- Repeat cooking and authoring at standard, largest non-accessibility, and all accessibility Dynamic Type categories. Confirm accessibility sizes stack cooking; check long recipe names, instructions, equipment names, ingredient quantities, timer labels, and horizontal editor rows. Verify reading distance and touch targets with practical kitchen use.
+- Use VoiceOver to traverse tabs, steps, ingredients, timer controls, grocery checkmarks, fields, validation, sheets, and dialogs. Check focus after step changes, modal dismissal, and errors; verify timer updates do not cause disruptive announcements. Test external-keyboard navigation on iPad.
+- Open the keyboard in notes, authoring, and Assistant at narrow and wide window sizes. Confirm the composer, Send, Save, Cancel, and validation remain reachable, including with long content. Verify unsaved-work dismissal and draft-review flows.
+- Measure rendered contrast for fixed cream/enamel panels, adaptive orange/apricot actions, disabled controls, yellow timers, native secondary text, and material surfaces. Include Increase Contrast, Reduce Transparency, and Bold Text.
+- Exercise empty, loading, retry, error, notification-denied, timer-running/paused/finished, imported-draft, and long-content states. On physical hardware, check scanner/photo sheets and timer notification recovery under foreground/background, relaunch, Focus, and notification-setting changes. These are required behavior checks, not completed validation.
