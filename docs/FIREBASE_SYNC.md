@@ -1,5 +1,7 @@
 # Firebase sync setup
 
+> Android is deprecated and no longer maintained as of October 6, 2026. Android-specific setup and UI instructions below are historical. Shared services and recipe formats remain in use; see the [active Apple client](../ios/README.md) for current client setup.
+
 MealOS keeps its local-first behavior while offering optional Google sign-in. After sign-in, Firestore synchronizes personal recipes, weekly plans, pantry selections, favorites, ratings, notes, and checked grocery items. Core recipes remain bundled with the app. Active timers, scanned images, and Recipe Assistant conversations remain on the device.
 
 ## Firebase Console

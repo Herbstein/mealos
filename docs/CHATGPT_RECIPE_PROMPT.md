@@ -1,5 +1,7 @@
 # Creating MealOS recipes with ChatGPT
 
+> Android is deprecated and no longer maintained as of October 6, 2026. Android-specific setup and UI instructions below are historical. Shared services and recipe formats remain in use; see the [active Apple client](../ios/README.md) for current client setup.
+
 MealOS ships a reusable prompt at `app/src/main/assets/chatgpt_recipe_prompt.txt`.
 
 1. In MealOS, open **Recipes** and tap **Copy AI recipe prompt**.

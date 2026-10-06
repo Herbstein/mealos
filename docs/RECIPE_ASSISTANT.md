@@ -1,5 +1,7 @@
 # Recipe Assistant setup
 
+> Android is deprecated and no longer maintained as of October 6, 2026. Android-specific setup and UI instructions below are historical. Shared services and recipe formats remain in use; see the [active Apple client](../ios/README.md) for current client setup.
+
 MealOS includes a native recipe conversation and photo import flow. Conversation history, extracted scan text, sources, the selected model, and the current draft are stored on the Android device. The Railway service is a stateless request gateway authenticated with the signed-in user's Firebase identity.
 
 ## Railway service

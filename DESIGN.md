@@ -146,6 +146,8 @@ components:
 
 # Design System: MealOS
 
+> Android was deprecated on October 6, 2026. Android, Material, and fold-specific implementation guidance below is historical reference. Apply the shared visual identity to the active Apple client using native iPhone and iPad patterns.
+
 ## Overview
 
 **Creative North Star: "Mise en Place Board"**

@@ -10,7 +10,7 @@ Railway variables:
 
 Set the Railway service root directory to `/bridge`. The included Dockerfile installs the Claude Agent SDK and starts `POST /v1/recipe-chat`. `GET /health` is available for Railway health checks.
 
-The agent can use `WebSearch`; shell, filesystem, subagent, and editing tools are blocked. The Android client sends the recent conversation on every request, so the server does not need a session store.
+The agent can use `WebSearch`; shell, filesystem, subagent, and editing tools are blocked. The Apple client (and the deprecated Android client) sends the recent conversation on every request, so the server does not need a session store.
 
 Every chat request carries a short-lived Firebase ID token. The bridge verifies it with Firebase Admin and returns `403` for any valid account outside the configured allowlist. No Firebase service-account key or permanent APK bearer token is required. The older `MEALOS_ALLOWED_FIREBASE_UID` variable remains supported as a fallback during migration.
 

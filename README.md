@@ -1,56 +1,21 @@
-# MealOS
+# MealOS / Forkware
 
-MealOS is a local-first Android meal planner built for the Samsung Galaxy Z Fold8 Ultra. It combines a 15-recipe core rotation, weekly planning, consolidated grocery lists, pantry exclusions, favorites, notes, ratings, leftovers, and a fold-aware cooking mode with timers.
+Forkware is the actively developed, local-first meal planner for iPhone and iPad. It includes a 15-recipe core rotation, meal planning, consolidated groceries, pantry exclusions, favorites, notes, ratings, and cooking with timers.
 
 ## iPhone and iPad
 
-The universal SwiftUI client lives in [`ios/`](ios/README.md). Open `ios/Forkware.xcodeproj` in full Xcode. It shares the existing Firebase library and Railway assistant, with compact phone layouts and a two-pane iPad cooking view. See the Apple client README for setup and current validation limits.
+The universal SwiftUI client lives in [`ios/`](ios/README.md). Open `ios/Forkware.xcodeproj` in full Xcode. See the [Apple client README](ios/README.md) for setup, validation, and TestFlight releases.
 
-## Run Android
+## Android — deprecated
 
-Open the project in Android Studio, select an Android 13+ device, and run the `app` configuration.
+As of October 6, 2026, the Android app is deprecated and no longer developed or maintained. No further Android features, fixes, dependency updates, or APK releases are planned. The automatic Android release workflow has been retired.
 
-From a terminal:
+The source in `app/` and the root Gradle build remain for historical reference. See the [Android archive notes](app/README.md) for the former build and product details.
 
-```sh
-GRADLE_USER_HOME=.gradle-user ./gradlew testDebugUnitTest assembleDebug
-```
+The Apple catalog exporter still reads `app/src/main/java/com/mealos/data/RecipeCatalog.kt`. Preserve this seed-data dependency until it is migrated; recipe-data updates for the Apple app remain in scope.
 
-The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+## Shared services and product guidance
 
-## Private releases
+The Firebase library and Railway assistant remain in use by the Apple client. Active development targets `ios/`, `bridge/`, and shared data/services needed by the Apple app.
 
-MealOS publishes private, signed APK releases from GitHub tags. The release signing key is held in GitHub Actions secrets and never committed.
-
-To publish an update (use the next semantic version):
-
-```sh
-git tag vX.Y.Z
-git push origin main vX.Y.Z
-```
-
-The `Release MealOS` workflow tests the app, derives a monotonically increasing Android version code from the tag, builds the signed APK, and attaches it to the matching private GitHub Release.
-
-The initial setup creates an ignored `.release` directory containing the only readable local copy of the permanent signing key and its credentials. Back up that directory in encrypted storage before publishing the first version; neither GitHub nor Android can reconstruct a lost signing key.
-
-On the Fold, add `https://github.com/kanki6315/mealos` to Obtainium. In Obtainium's GitHub source settings, provide a fine-grained GitHub token restricted to this repository with read-only Contents access. Obtainium reads GitHub Releases; temporary GitHub Actions artifacts are not the update source.
-
-The first signed release cannot update a debug-signed installation. Uninstall the debug build once before installing the first release build. Every later release must use the same signing key.
-
-## Product shape
-
-- Native Kotlin and Jetpack Compose
-- Local persistence with DataStore; no account or network required
-- Adaptive cover and unfolded layouts with a drawer instead of a permanent sidebar
-- Equal-weight cooking panes when unfolded, including previous/next step previews
-- Native cooking timers and notifications
-- A fold-aware manual recipe editor with ingredients, steps, timers, equipment, leftovers, and cooking preview
-- Versioned `.mealosrecipe` files that can be shared to or opened with MealOS for review before saving
-- A built-in ChatGPT recipe prompt; copied recipes remain local and require no in-app AI subscription
-- A native, locally persisted Recipe Assistant with a stateless Railway request gateway
-- A locally remembered Sonnet, Opus, or Haiku selector with a server-side model allowlist
-- Optional Google sign-in with Firestore sync for recipes, plans, pantry, favorites, ratings, notes, and grocery state
-- Printed-recipe and gallery import through ML Kit document scanning and on-device OCR
-- Core recipes remain structured in `RecipeCatalog.kt`; personal and imported recipes persist locally through the same simple model
-
-See `docs/FIREBASE_SYNC.md` for Firebase and Firestore setup, `docs/RECIPE_ASSISTANT.md` for Railway configuration, `docs/CHATGPT_RECIPE_PROMPT.md` for the no-server fallback, `PRODUCT.md` for product decisions, and `DESIGN.md` for the visual system.
+See [Firebase sync](docs/FIREBASE_SYNC.md), [Recipe Assistant setup](docs/RECIPE_ASSISTANT.md), [product decisions](PRODUCT.md), and the [visual system](DESIGN.md). Android-specific instructions in these documents are historical reference.

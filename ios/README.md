@@ -2,7 +2,7 @@
 
 Forkware is the displayed app name; the Xcode project and scheme are also named `Forkware`.
 
-A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format, Firebase account data, and Railway assistant. The Android app remains in `app/`.
+A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format, Firebase account data, and Railway assistant. The Android app in `app/` is deprecated as of October 6, 2026 and is no longer developed or maintained. This Apple client is the active development target. The catalog exporter still reads the retained Android `RecipeCatalog.kt` seed data.
 
 ## Open and run
 

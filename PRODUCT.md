@@ -2,13 +2,17 @@
 
 <!-- impeccable:product-schema 1 -->
 
+## Development status
+
+As of October 6, 2026, Android is deprecated and no longer developed or maintained. All new client work targets Forkware for iPhone and iPad. Android-specific capabilities, hardware constraints, and interactions below document the historical implementation, not requirements for future Android work. Shared Firebase, Railway, and seed recipe data remain active dependencies of the Apple app.
+
 ## Platform
 
 adaptive
 
 ## Stack
 
-Native Android app in Kotlin and Jetpack Compose, plus a universal iPhone/iPad app in SwiftUI. Both retain the same offline-first meal model and share Firebase account data and the Railway recipe assistant.
+Active client: universal iPhone/iPad app in SwiftUI, retaining the offline-first meal model, Firebase account data, and Railway recipe assistant. The original Kotlin/Jetpack Compose Android client is retained as deprecated source.
 
 ## Users
 
