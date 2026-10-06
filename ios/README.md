@@ -89,8 +89,11 @@ One-time setup:
    Mac's Apple Distribution certificate, provided they belong to the same team
    and have access to MealOS. No key needs to be copied into this repository.
 4. In TestFlight, create an internal testing group, add yourself, and enable
-   automatic distribution if desired. Complete export-compliance questions after
-   processing. External testing additionally needs beta review and test details.
+   automatic distribution if desired. `MealOS/Info.plist` declares
+   `ITSAppUsesNonExemptEncryption = NO` for the app's current exempt encryption
+   use, so new builds include the export-compliance declaration. Reassess this
+   value if encryption use changes. External testing additionally needs beta
+   review and test details.
 
 From the MealOS repository root, first export without uploading:
 
@@ -150,7 +153,7 @@ python3 ios/scripts/run_ui_tests.py
 
 The script discovers simulators, runs the shared `MealOSUITests` target on each, and saves logs, `.xcresult` bundles, and screenshots beneath a timestamped `/tmp/mealos-ui-*` directory. Pass `--iphone <UDID>` and `--ipad <UDID>` to choose devices. UI tests use a separate local data directory and disable cloud attachment in Debug builds, so they do not overwrite your library or upload test recipes.
 
-The `Validate MealOS Apple app` workflow runs core XCTest, a universal simulator build, and iPhone/iPad UI tests on GitHub's macOS runner after a push or PR, preserving results as an artifact. The workflow itself has not been run remotely during this implementation.
+Validation runs locally using the commands above. The release script also runs core and iPhone/iPad UI tests before archiving and uploading, unless `--skip-tests` is supplied.
 
 Before treating this as device-ready, run these checks:
 
