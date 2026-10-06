@@ -1,0 +1,164 @@
+# Forkware for iPhone and iPad
+
+Forkware is the displayed app name; the Xcode project and scheme are also named `Forkware`.
+
+A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format, Firebase account data, and Railway assistant. The Android app remains in `app/`.
+
+## Open and run
+
+1. Install full **Xcode** with an iOS simulator runtime. Apple's standalone Command Line Tools cannot build this app.
+2. Open `ios/Forkware.xcodeproj`. Let Xcode resolve Firebase and Google Sign-In packages.
+3. Select the **Forkware** scheme and an iPhone or iPad simulator, then Run.
+4. To install on your devices, select your Apple development team under **Signing & Capabilities**, then run on the connected device. Do not commit personal signing overrides.
+
+The Firebase Apple app (`com.arjunakankipati.forkware`) is registered in the existing `mealos-af8fc` project. Its public client configuration is bundled, and `Config.xcconfig` points at `https://mealos.arjunakankipati.com`. No server credential or assistant subscription token is included. Google sign-in and assistant requests still need validation in a running Apple app. A health request to the configured assistant hostname failed DNS resolution on this Mac during setup (September 10, 2026); confirm the domain resolves before testing assistant calls.
+
+Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with the same Google account used on Android to access the same cloud library. Assistant access uses the existing server-side UID allowlist.
+
+## Features
+
+- All 15 original recipes, exported directly from `RecipeCatalog.kt`.
+- Seven-day meal planning with one, two, or dinner-plus-lunch portions.
+- Consolidated groceries grouped by category, pantry exclusions, and persistent checkmarks.
+- Favorites, ratings, notes, manual recipes, and customization of bundled recipes as personal copies.
+- Versioned `.mealosrecipe` import/export. Imports open in the editor for review; they never save automatically.
+- Native Google sign-in and Firestore sync using the Android document paths and JSON schema.
+- Local Recipe Assistant history, model selection, sources, generated drafts, and a copyable ChatGPT prompt.
+- Printed-page scanning and photo OCR with Apple Vision/VisionKit; extracted text stays in the composer until Send.
+- Cooking with large instructions, next-step previews, scaled ingredients, and persistent device-local timers.
+- Two cooking columns at window widths of at least 720 points. Narrow iPad windows and accessibility text sizes use the compact layout. Navigation and window safe areas stay native.
+
+## Data and synchronization
+
+`Application Support/MealOS/mealos-v1.json` holds the local library, preferences, assistant history, cooking positions, timers, and pending cloud-write markers. Writes are atomic. Failed writes roll back the in-memory snapshot and retain an edited recipe's unsaved draft. An unreadable local snapshot is preserved instead of being replaced with empty data.
+
+Cloud documents remain `/users/{uid}/mealos/preferences` and `/users/{uid}/mealos/recipes`, each with `schemaVersion`, JSON `payload`, and `updatedAt`. No Firestore rules change is required.
+
+On the first connection to an existing account, its cloud library initializes the device, replacing the current local library. Empty accounts are seeded from local data. Subsequent offline edits for the same account are marked durably and retried on reconnect; unacknowledged documents are protected from listener replacement. Simultaneous edits to the same cloud document retain the existing last-write-wins behavior. Signing out keeps local data but ends the pending-write association with that account.
+
+Timers, cooking positions, and assistant chats are intentionally not cloud-synchronized. Timers persist absolute deadlines; local notifications are scheduled with the operating system. Their sounds obey notification, Silent mode, and Focus settings. This version does not implement AlarmKit, Live Activities, or cross-device cooking handoff.
+
+## Configuration and regeneration
+
+The app icon uses the Forkware Enamel Pop FW ligature. Its editable Icon Composer
+source is `MealOS/Resources/AppIcon.icon`, included in the app's resource build
+phase. The matching `AppIcon` asset catalog contains an opaque flat fallback for
+older iOS versions. After editing the vector artwork, regenerate that fallback:
+
+```sh
+swift ios/scripts/make_icon.swift ios/MealOS/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+```
+
+For a replacement Apple Firebase registration, use the Apple `GoogleService-Info.plist`, never Android's `google-services.json`:
+
+```sh
+python3 ios/scripts/configure.py \
+  --firebase-plist /absolute/path/GoogleService-Info.plist \
+  --bridge-url https://your-existing-assistant-host \
+  --team YOURTEAMID
+```
+
+The helper checks the Firebase project and bundle ID, copies the public client config, writes ignored `Config.local.xcconfig` overrides, and regenerates the project. Update shared defaults deliberately when changing the project's registration. Personal Apple signing settings belong in the local override, e.g. `DEVELOPMENT_TEAM = ABCDE12345`.
+
+After changing Kotlin seed recipes or adding native source/resource files:
+
+```sh
+python3 ios/scripts/export_catalog.py
+python3 ios/scripts/generate_project.py
+```
+
+Both scripts use Python's standard library; XcodeGen and CocoaPods are unnecessary. The checked-in project uses Swift Package Manager for Firebase and Google Sign-In. Core logic itself has no external dependencies and is also available as the `MealOSCore` Swift package.
+
+## Releasing to TestFlight
+
+`ios/release.sh` follows broadcast-helper/Pitpass's release workflow: core tests,
+iPhone/iPad UI tests, Release archive, App Store export/upload, then a local Git
+tag for a clean release. It uses the existing Xcode project without regenerating
+it, preserving signing edits made in Xcode. It does not push tags or create the
+App Store Connect app record.
+
+One-time setup:
+
+1. Create an iOS app in App Store Connect for bundle ID `com.arjunakankipati.forkware`, SKU
+   `mealos`, and your chosen available display name. Keep the bundle ID aligned
+   with the bundled Firebase configuration.
+2. Use the paid Apple Developer team in Xcode Signing & Capabilities. The script
+   reads the project's team and version; `DEVELOPMENT_TEAM` and
+   `MARKETING_VERSION` environment values can override them.
+3. Reuse the Pitpass App Store Connect API credential configuration and this
+   Mac's Apple Distribution certificate, provided they belong to the same team
+   and have access to MealOS. No key needs to be copied into this repository.
+4. In TestFlight, create an internal testing group, add yourself, and enable
+   automatic distribution if desired. Complete export-compliance questions after
+   processing. External testing additionally needs beta review and test details.
+
+From the MealOS repository root, first export without uploading:
+
+```sh
+MEALOS_RELEASE_ENV=/Users/arjunakankipati/claude-projects/broadcast-helper/ios/.release.env \
+  ios/release.sh --no-upload --allow-dirty
+```
+
+Then, when ready to upload:
+
+```sh
+MEALOS_RELEASE_ENV=/Users/arjunakankipati/claude-projects/broadcast-helper/ios/.release.env \
+  ios/release.sh --allow-dirty
+```
+
+Omit `--allow-dirty` after committing the release changes to enable the local
+`ios/v<version>-<build>` tag. The default build number is a UTC minute stamp;
+use `--build N` for an explicit unique number or a second release in the same
+minute. Use `--skip-tests` only after testing that exact code. Outputs are under
+`ios/build/release/`; existing output directories are never overwritten.
+
+Alternatively, supply `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` in an
+ignored `ios/.release.env`. Without API credentials the script uses the Apple
+account signed into Xcode. `--no-upload` still permits signing/provisioning
+updates in the developer account; it only disables binary upload. The profile
+helper reuses or creates a MealOS App Store profile without deleting old ones.
+
+The release script has not yet completed a real signed archive or TestFlight
+upload. Before sharing a build, validate Google sign-in, sync, the live assistant
+endpoint, and real-device timer delivery.
+
+## Running validation
+
+With full Xcode selected (or use the explicit path below if `xcode-select` still points to Command Line Tools):
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+swift test --package-path ios
+xcodebuild -project ios/Forkware.xcodeproj -scheme Forkware \
+  -configuration Debug -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath /tmp/MealOSDerivedData CODE_SIGNING_ALLOWED=NO build
+```
+
+On a Mac with only Command Line Tools:
+
+```sh
+python3 ios/scripts/test_core.py
+```
+
+That fallback compiles the actual shared Swift sources and executes the same test bodies through a small assertion adapter; it does not substitute for XCTest integration, an Apple app build, or simulator validation. Tests cover the full catalog, import validation, Android data compatibility, portion aggregation, timer persistence/restart/identity, local-file corruption, and assistant request limits.
+
+Run the UI suite on an available iPhone and iPad:
+
+```sh
+python3 ios/scripts/run_ui_tests.py
+```
+
+The script discovers simulators, runs the shared `MealOSUITests` target on each, and saves logs, `.xcresult` bundles, and screenshots beneath a timestamped `/tmp/mealos-ui-*` directory. Pass `--iphone <UDID>` and `--ipad <UDID>` to choose devices. UI tests use a separate local data directory and disable cloud attachment in Debug builds, so they do not overwrite your library or upload test recipes.
+
+The `Validate MealOS Apple app` workflow runs core XCTest, a universal simulator build, and iPhone/iPad UI tests on GitHub's macOS runner after a push or PR, preserving results as an artifact. The workflow itself has not been run remotely during this implementation.
+
+Before treating this as device-ready, run these checks:
+
+- iPhone portrait/landscape; iPad full-width, portrait, landscape, and narrow multitasking windows.
+- Light/dark appearance, large Dynamic Type, VoiceOver labels, and keyboard reachability.
+- Create/edit/cancel/import/export a recipe, reorder steps, and relaunch offline.
+- Android-to-Apple sync with the same account, first connection to an empty account, offline edits/relaunch/reconnect, and sign-out while writes are pending.
+- Scan and photo OCR; authorized and unauthorized assistant accounts; timeout and retry.
+- Timer pause/resume/restart, app backgrounding/termination, denied notifications, Focus, Silent mode, and a real-device restart.
+
+Native simulator validation is now possible with Xcode 26.6 and iOS 26.5. See [the validation report](validation/2026-09-10/REPORT.md) for observed results, fixes, screenshots, and the remaining real-device/cloud checks.

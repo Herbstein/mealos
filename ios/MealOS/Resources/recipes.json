@@ -1,0 +1,1448 @@
+[
+  {
+    "id": "garlic-herb-chicken",
+    "name": "Garlic-herb chicken + baby potatoes + broccoli",
+    "shortName": "Garlic-herb chicken",
+    "equipment": [
+      "CRISPi DualZone"
+    ],
+    "tags": [
+      "Core",
+      "Air fryer",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-breast",
+        "name": "Chicken breasts",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "baby-potatoes",
+        "name": "Baby potatoes",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "broccoli",
+        "name": "Broccoli florets",
+        "amount": 12.0,
+        "unit": "oz",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "olive-oil",
+        "name": "Olive oil",
+        "amount": 1.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      },
+      {
+        "id": "garlic-powder",
+        "name": "Garlic powder",
+        "amount": 1.0,
+        "unit": "tsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      },
+      {
+        "id": "italian-seasoning",
+        "name": "Garlic-herb seasoning",
+        "amount": 2.0,
+        "unit": "tsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      },
+      {
+        "id": "salt",
+        "name": "Salt",
+        "amount": 0.5,
+        "unit": "tsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      },
+      {
+        "id": "black-pepper",
+        "name": "Black pepper",
+        "amount": 0.25,
+        "unit": "tsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      }
+    ],
+    "steps": [
+      {
+        "title": "Prep the potatoes",
+        "instruction": "Halve the potatoes. Toss with olive oil, garlic-herb seasoning, salt, and pepper.",
+        "equipment": "CRISPi basket 1"
+      },
+      {
+        "title": "Start the potatoes",
+        "instruction": "Air fry at 400°F. Shake the basket halfway through.",
+        "equipment": "CRISPi basket 1",
+        "timerSeconds": 1200
+      },
+      {
+        "title": "Season the chicken",
+        "instruction": "Pat dry, lightly oil, and season both sides generously.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Add the chicken",
+        "instruction": "Place chicken in basket 2 at 400°F. Cook until the thickest piece reaches 165°F.",
+        "equipment": "CRISPi basket 2",
+        "tip": "Start checking at 12 minutes.",
+        "timerSeconds": 840
+      },
+      {
+        "title": "Finish with broccoli",
+        "instruction": "Add broccoli for the final 7 minutes. Rest chicken 3 minutes before packing lunch.",
+        "equipment": "CRISPi DualZone",
+        "timerSeconds": 420
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 28,
+    "leftoverNote": "Pack half with potatoes and broccoli before serving dinner.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "bbq-chicken",
+    "name": "BBQ chicken + potatoes + corn",
+    "shortName": "BBQ chicken",
+    "equipment": [
+      "CRISPi DualZone"
+    ],
+    "tags": [
+      "Air fryer",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-breast",
+        "name": "Chicken breasts",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "baby-potatoes",
+        "name": "Baby potatoes",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "corn",
+        "name": "Corn kernels",
+        "amount": 12.0,
+        "unit": "oz",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "bbq-sauce",
+        "name": "BBQ sauce",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "olive-oil",
+        "name": "Olive oil",
+        "amount": 1.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      },
+      {
+        "id": "salt",
+        "name": "Salt",
+        "amount": 0.5,
+        "unit": "tsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      }
+    ],
+    "steps": [
+      {
+        "title": "Season the potatoes",
+        "instruction": "Halve, oil, and salt the potatoes.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Start the potatoes",
+        "instruction": "Air fry at 400°F, shaking once.",
+        "equipment": "CRISPi basket 1",
+        "timerSeconds": 1200
+      },
+      {
+        "title": "Cook the chicken",
+        "instruction": "Season chicken and air fry in basket 2 at 400°F.",
+        "equipment": "CRISPi basket 2",
+        "timerSeconds": 720
+      },
+      {
+        "title": "Glaze",
+        "instruction": "Brush with BBQ sauce and cook until 165°F.",
+        "equipment": "CRISPi basket 2",
+        "timerSeconds": 180
+      },
+      {
+        "title": "Warm the corn",
+        "instruction": "Microwave corn, season, and pack one leftover portion.",
+        "equipment": "Microwave",
+        "timerSeconds": 240
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 28,
+    "leftoverNote": "Slice leftover chicken only after it cools so it stays juicy.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "chicken-parmesan",
+    "name": "Chicken Parmesan + pasta",
+    "shortName": "Chicken Parmesan",
+    "equipment": [
+      "CRISPi",
+      "Pot"
+    ],
+    "tags": [
+      "Pasta",
+      "Familiar"
+    ],
+    "ingredients": [
+      {
+        "id": "breaded-chicken",
+        "name": "Breaded chicken cutlets",
+        "amount": 4.0,
+        "unit": "pieces",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "pasta",
+        "name": "Pasta",
+        "amount": 8.0,
+        "unit": "oz",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "marinara",
+        "name": "Marinara sauce",
+        "amount": 2.0,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "mozzarella",
+        "name": "Shredded mozzarella",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "parmesan",
+        "name": "Parmesan",
+        "amount": 0.25,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Boil the pasta",
+        "instruction": "Salt the water and cook pasta according to the package.",
+        "equipment": "Pot",
+        "timerSeconds": 600
+      },
+      {
+        "title": "Crisp the chicken",
+        "instruction": "Air fry cutlets at 400°F until crisp and hot.",
+        "equipment": "CRISPi",
+        "timerSeconds": 720
+      },
+      {
+        "title": "Add sauce",
+        "instruction": "Spoon marinara over each cutlet, keeping the edges exposed.",
+        "equipment": "CRISPi"
+      },
+      {
+        "title": "Melt the cheese",
+        "instruction": "Top with mozzarella and Parmesan; air fry until melted.",
+        "equipment": "CRISPi",
+        "timerSeconds": 180
+      },
+      {
+        "title": "Serve",
+        "instruction": "Drain pasta, add marinara, and keep lunch components separate.",
+        "equipment": "Pot"
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 32,
+    "leftoverNote": "Store pasta and chicken separately so the coating stays crisp.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "buffalo-wraps",
+    "name": "Buffalo chicken wraps",
+    "shortName": "Buffalo chicken wraps",
+    "equipment": [
+      "CRISPi"
+    ],
+    "tags": [
+      "Wrap",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-tenders",
+        "name": "Chicken tenders",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "tortillas",
+        "name": "Large flour tortillas",
+        "amount": 4.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "buffalo-sauce",
+        "name": "Buffalo sauce",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "lettuce",
+        "name": "Shredded lettuce",
+        "amount": 4.0,
+        "unit": "cups",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "cheddar",
+        "name": "Shredded cheddar",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "ranch",
+        "name": "Ranch dressing",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Season",
+        "instruction": "Lightly oil and season the chicken tenders.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Air fry",
+        "instruction": "Cook at 400°F, turning once, until 165°F.",
+        "equipment": "CRISPi",
+        "timerSeconds": 720
+      },
+      {
+        "title": "Sauce",
+        "instruction": "Slice the chicken and toss with buffalo sauce.",
+        "equipment": "Mixing bowl"
+      },
+      {
+        "title": "Build",
+        "instruction": "Layer lettuce, chicken, cheddar, and ranch in each tortilla.",
+        "equipment": "Counter"
+      },
+      {
+        "title": "Wrap",
+        "instruction": "Roll tightly. Pack lunch components separately.",
+        "equipment": "Counter"
+      }
+    ],
+    "effortMinutes": 7,
+    "totalMinutes": 20,
+    "leftoverNote": "Keep the tortilla and greens separate until lunch.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "caesar-wraps",
+    "name": "Chicken Caesar wraps",
+    "shortName": "Chicken Caesar wraps",
+    "equipment": [
+      "CRISPi"
+    ],
+    "tags": [
+      "Wrap",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-tenders",
+        "name": "Chicken tenders",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "tortillas",
+        "name": "Large flour tortillas",
+        "amount": 4.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "romaine",
+        "name": "Romaine hearts",
+        "amount": 2.0,
+        "unit": "count",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "caesar",
+        "name": "Caesar dressing",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "parmesan",
+        "name": "Parmesan",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "croutons",
+        "name": "Croutons",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Cook the chicken",
+        "instruction": "Season and air fry chicken at 400°F until 165°F.",
+        "equipment": "CRISPi",
+        "timerSeconds": 720
+      },
+      {
+        "title": "Chop",
+        "instruction": "Chop romaine and lightly crush the croutons.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Dress dinner",
+        "instruction": "Toss half the romaine with dressing, Parmesan, and croutons.",
+        "equipment": "Mixing bowl"
+      },
+      {
+        "title": "Build wraps",
+        "instruction": "Add sliced chicken and dressed romaine to tortillas.",
+        "equipment": "Counter"
+      },
+      {
+        "title": "Pack lunch",
+        "instruction": "Pack remaining components separately and refrigerate.",
+        "equipment": "Storage container"
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 18,
+    "leftoverNote": "Dress only the dinner portion; pack lunch dressing separately.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "cheeseburger-fries",
+    "name": "Cheeseburger + air-fryer fries",
+    "shortName": "Cheeseburger + fries",
+    "equipment": [
+      "CRISPi",
+      "Pan"
+    ],
+    "tags": [
+      "Comfort food"
+    ],
+    "ingredients": [
+      {
+        "id": "ground-beef",
+        "name": "Ground beef",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "burger-buns",
+        "name": "Burger buns",
+        "amount": 4.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "cheddar-slices",
+        "name": "Cheddar slices",
+        "amount": 4.0,
+        "unit": "count",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "frozen-fries",
+        "name": "Frozen fries",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "lettuce",
+        "name": "Lettuce",
+        "amount": 4.0,
+        "unit": "leaves",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "tomato",
+        "name": "Tomato",
+        "amount": 1.0,
+        "unit": "count",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start the fries",
+        "instruction": "Air fry at 400°F and shake twice.",
+        "equipment": "CRISPi",
+        "timerSeconds": 1080
+      },
+      {
+        "title": "Shape patties",
+        "instruction": "Form four loose patties and season both sides.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Cook burgers",
+        "instruction": "Sear in a hot pan to your preferred doneness.",
+        "equipment": "Pan",
+        "timerSeconds": 480
+      },
+      {
+        "title": "Melt cheese",
+        "instruction": "Add cheese during the final minute and cover briefly.",
+        "equipment": "Pan",
+        "timerSeconds": 60
+      },
+      {
+        "title": "Build",
+        "instruction": "Toast buns if desired and add lettuce and tomato.",
+        "equipment": "Toaster"
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 24,
+    "leftoverNote": "Burgers are best fresh; save extra uncooked patty mixture instead.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "teriyaki-bowl",
+    "name": "Teriyaki chicken rice bowl + broccoli",
+    "shortName": "Teriyaki chicken bowl",
+    "equipment": [
+      "CRISPi",
+      "Rice cooker"
+    ],
+    "tags": [
+      "Bowl",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-thighs",
+        "name": "Boneless chicken thighs",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "rice",
+        "name": "White rice",
+        "amount": 1.5,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "broccoli",
+        "name": "Broccoli florets",
+        "amount": 12.0,
+        "unit": "oz",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "teriyaki",
+        "name": "Teriyaki sauce",
+        "amount": 0.75,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "sesame",
+        "name": "Sesame seeds",
+        "amount": 1.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start rice",
+        "instruction": "Rinse rice and start the rice cooker.",
+        "equipment": "Rice cooker",
+        "timerSeconds": 1320
+      },
+      {
+        "title": "Cook chicken",
+        "instruction": "Air fry seasoned thighs at 400°F until 165°F.",
+        "equipment": "CRISPi",
+        "timerSeconds": 840
+      },
+      {
+        "title": "Add broccoli",
+        "instruction": "Air fry broccoli alongside the chicken for the final minutes.",
+        "equipment": "CRISPi",
+        "timerSeconds": 420
+      },
+      {
+        "title": "Sauce",
+        "instruction": "Slice chicken and toss with teriyaki sauce.",
+        "equipment": "Mixing bowl"
+      },
+      {
+        "title": "Build bowls",
+        "instruction": "Divide rice, broccoli, and chicken. Finish with sesame.",
+        "equipment": "Bowls"
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 25,
+    "leftoverNote": "Build lunch in a microwave-safe container with sauce on top.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "beef-burrito-bowls",
+    "name": "Beef burrito bowls",
+    "shortName": "Beef burrito bowls",
+    "equipment": [
+      "Pan",
+      "Rice cooker"
+    ],
+    "tags": [
+      "Bowl",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "ground-beef",
+        "name": "Ground beef",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "rice",
+        "name": "White rice",
+        "amount": 1.5,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "black-beans",
+        "name": "Black beans",
+        "amount": 1.0,
+        "unit": "can",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "corn",
+        "name": "Corn kernels",
+        "amount": 8.0,
+        "unit": "oz",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "salsa",
+        "name": "Salsa",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "cheddar",
+        "name": "Shredded cheddar",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "taco-seasoning",
+        "name": "Taco seasoning",
+        "amount": 2.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start rice",
+        "instruction": "Rinse rice and start the rice cooker.",
+        "equipment": "Rice cooker",
+        "timerSeconds": 1320
+      },
+      {
+        "title": "Brown beef",
+        "instruction": "Cook beef in a hot pan, breaking it into small pieces.",
+        "equipment": "Pan",
+        "timerSeconds": 480
+      },
+      {
+        "title": "Season",
+        "instruction": "Drain excess fat, add taco seasoning and a splash of water.",
+        "equipment": "Pan",
+        "timerSeconds": 180
+      },
+      {
+        "title": "Warm sides",
+        "instruction": "Stir in drained beans and corn until hot.",
+        "equipment": "Pan",
+        "timerSeconds": 240
+      },
+      {
+        "title": "Build bowls",
+        "instruction": "Divide rice and beef mixture; top dinner with salsa and cheese.",
+        "equipment": "Bowls"
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 25,
+    "leftoverNote": "Pack toppings separately so lunch reheats cleanly.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "tikka-masala",
+    "name": "Chicken tikka masala + rice",
+    "shortName": "Chicken tikka masala",
+    "equipment": [
+      "Pan",
+      "Rice cooker"
+    ],
+    "tags": [
+      "Saucy",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-thighs",
+        "name": "Boneless chicken thighs",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "rice",
+        "name": "Basmati rice",
+        "amount": 1.5,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "tikka-sauce",
+        "name": "Tikka masala simmer sauce",
+        "amount": 1.0,
+        "unit": "jar",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "yogurt",
+        "name": "Plain yogurt",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "naan",
+        "name": "Naan",
+        "amount": 4.0,
+        "unit": "pieces",
+        "category": "BAKERY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start rice",
+        "instruction": "Rinse basmati rice and start the rice cooker.",
+        "equipment": "Rice cooker",
+        "timerSeconds": 1320
+      },
+      {
+        "title": "Brown chicken",
+        "instruction": "Cut chicken into chunks and brown in a lightly oiled pan.",
+        "equipment": "Pan",
+        "timerSeconds": 420
+      },
+      {
+        "title": "Simmer",
+        "instruction": "Add tikka masala sauce and simmer until chicken reaches 165°F.",
+        "equipment": "Pan",
+        "timerSeconds": 600
+      },
+      {
+        "title": "Finish sauce",
+        "instruction": "Remove from heat and stir in yogurt for a milder finish.",
+        "equipment": "Pan"
+      },
+      {
+        "title": "Warm naan",
+        "instruction": "Toast naan and divide rice and curry into dinner and lunch portions.",
+        "equipment": "Toaster",
+        "timerSeconds": 120
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 28,
+    "leftoverNote": "This reheats especially well; cool rice quickly before refrigerating.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "steak-rice-peppers",
+    "name": "Steak + rice + peppers",
+    "shortName": "Steak, rice + peppers",
+    "equipment": [
+      "Ooni Volt or pan",
+      "Rice cooker"
+    ],
+    "tags": [
+      "High heat"
+    ],
+    "ingredients": [
+      {
+        "id": "sirloin",
+        "name": "Sirloin steak",
+        "amount": 1.25,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "rice",
+        "name": "White rice",
+        "amount": 1.5,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "bell-peppers",
+        "name": "Bell peppers",
+        "amount": 3.0,
+        "unit": "count",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "onion",
+        "name": "Yellow onion",
+        "amount": 1.0,
+        "unit": "count",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "olive-oil",
+        "name": "Olive oil",
+        "amount": 1.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": true
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start rice",
+        "instruction": "Rinse rice and start the rice cooker.",
+        "equipment": "Rice cooker",
+        "timerSeconds": 1320
+      },
+      {
+        "title": "Prep",
+        "instruction": "Slice peppers and onion. Pat steak dry and season.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Cook vegetables",
+        "instruction": "Cook peppers and onion at high heat until browned but crisp.",
+        "equipment": "Ooni Volt or pan",
+        "timerSeconds": 420
+      },
+      {
+        "title": "Cook steak",
+        "instruction": "Sear steak to preferred doneness.",
+        "equipment": "Ooni Volt or pan",
+        "timerSeconds": 480
+      },
+      {
+        "title": "Rest and slice",
+        "instruction": "Rest steak before slicing across the grain.",
+        "equipment": "Cutting board",
+        "timerSeconds": 300
+      }
+    ],
+    "effortMinutes": 8,
+    "totalMinutes": 26,
+    "leftoverNote": "Slice only the lunch portion after resting; keep rice separate.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "beef-tacos",
+    "name": "Beef tacos",
+    "shortName": "Beef tacos",
+    "equipment": [
+      "Pan",
+      "Microwave"
+    ],
+    "tags": [
+      "Tacos",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "ground-beef",
+        "name": "Ground beef",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "tortillas-small",
+        "name": "Small tortillas",
+        "amount": 12.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "taco-seasoning",
+        "name": "Taco seasoning",
+        "amount": 2.0,
+        "unit": "tbsp",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "lettuce",
+        "name": "Shredded lettuce",
+        "amount": 3.0,
+        "unit": "cups",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "tomato",
+        "name": "Tomatoes",
+        "amount": 2.0,
+        "unit": "count",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "cheddar",
+        "name": "Shredded cheddar",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "salsa",
+        "name": "Salsa",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Prep toppings",
+        "instruction": "Chop tomatoes and set out lettuce, cheese, and salsa.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Brown beef",
+        "instruction": "Cook beef in a hot pan, breaking it apart.",
+        "equipment": "Pan",
+        "timerSeconds": 480
+      },
+      {
+        "title": "Season",
+        "instruction": "Drain excess fat and simmer with seasoning and water.",
+        "equipment": "Pan",
+        "timerSeconds": 180
+      },
+      {
+        "title": "Warm tortillas",
+        "instruction": "Warm tortillas under a damp towel.",
+        "equipment": "Microwave",
+        "timerSeconds": 45
+      },
+      {
+        "title": "Build",
+        "instruction": "Fill dinner tacos. Pack lunch filling and toppings separately.",
+        "equipment": "Counter"
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 20,
+    "leftoverNote": "Store taco filling separately; reheat before assembling.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "spaghetti-meatballs",
+    "name": "Spaghetti + meatballs",
+    "shortName": "Spaghetti + meatballs",
+    "equipment": [
+      "CRISPi",
+      "Pot"
+    ],
+    "tags": [
+      "Pasta",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "meatballs",
+        "name": "Frozen beef meatballs",
+        "amount": 16.0,
+        "unit": "count",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "spaghetti",
+        "name": "Spaghetti",
+        "amount": 12.0,
+        "unit": "oz",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "marinara",
+        "name": "Marinara sauce",
+        "amount": 3.0,
+        "unit": "cups",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "parmesan",
+        "name": "Parmesan",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start meatballs",
+        "instruction": "Air fry meatballs at 390°F until browned and hot.",
+        "equipment": "CRISPi",
+        "timerSeconds": 720
+      },
+      {
+        "title": "Boil pasta",
+        "instruction": "Cook spaghetti in salted water until al dente.",
+        "equipment": "Pot",
+        "timerSeconds": 600
+      },
+      {
+        "title": "Warm sauce",
+        "instruction": "Warm marinara in a second pot or microwave-safe bowl.",
+        "equipment": "Pot or microwave",
+        "timerSeconds": 360
+      },
+      {
+        "title": "Combine",
+        "instruction": "Add meatballs to sauce and simmer briefly.",
+        "equipment": "Pot",
+        "timerSeconds": 180
+      },
+      {
+        "title": "Serve",
+        "instruction": "Toss pasta with sauce and finish with Parmesan.",
+        "equipment": "Bowls"
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 30,
+    "leftoverNote": "Toss lunch pasta with a little extra sauce before refrigerating.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "chicken-pesto-pasta",
+    "name": "Chicken pesto pasta",
+    "shortName": "Chicken pesto pasta",
+    "equipment": [
+      "CRISPi",
+      "Pot"
+    ],
+    "tags": [
+      "Pasta",
+      "Great leftovers"
+    ],
+    "ingredients": [
+      {
+        "id": "chicken-breast",
+        "name": "Chicken breasts",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "pasta",
+        "name": "Short pasta",
+        "amount": 12.0,
+        "unit": "oz",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "pesto",
+        "name": "Basil pesto",
+        "amount": 0.75,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "cherry-tomatoes",
+        "name": "Cherry tomatoes",
+        "amount": 1.0,
+        "unit": "pint",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "parmesan",
+        "name": "Parmesan",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "DAIRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Cook chicken",
+        "instruction": "Season and air fry chicken at 400°F until 165°F.",
+        "equipment": "CRISPi",
+        "timerSeconds": 840
+      },
+      {
+        "title": "Boil pasta",
+        "instruction": "Cook pasta until al dente; reserve some pasta water.",
+        "equipment": "Pot",
+        "timerSeconds": 600
+      },
+      {
+        "title": "Halve tomatoes",
+        "instruction": "Cut cherry tomatoes while the pasta cooks.",
+        "equipment": "Prep board"
+      },
+      {
+        "title": "Sauce",
+        "instruction": "Drain pasta and toss off heat with pesto and enough pasta water to loosen.",
+        "equipment": "Pot"
+      },
+      {
+        "title": "Finish",
+        "instruction": "Slice chicken, fold in tomatoes, and top with Parmesan.",
+        "equipment": "Pot"
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 26,
+    "leftoverNote": "Add a spoonful of pasta water to the lunch portion before chilling.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "pizza",
+    "name": "Pepperoni or margherita pizza",
+    "shortName": "Pizza night",
+    "equipment": [
+      "Ooni Volt"
+    ],
+    "tags": [
+      "Pizza",
+      "Weekend"
+    ],
+    "ingredients": [
+      {
+        "id": "pizza-dough",
+        "name": "Pizza dough balls",
+        "amount": 2.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "pizza-sauce",
+        "name": "Pizza sauce",
+        "amount": 1.0,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "mozzarella",
+        "name": "Low-moisture mozzarella",
+        "amount": 2.0,
+        "unit": "cups",
+        "category": "DAIRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "pepperoni",
+        "name": "Pepperoni",
+        "amount": 4.0,
+        "unit": "oz",
+        "category": "MEAT",
+        "pantryStaple": false
+      },
+      {
+        "id": "basil",
+        "name": "Fresh basil",
+        "amount": 1.0,
+        "unit": "bunch",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Preheat",
+        "instruction": "Preheat the Ooni Volt and stone for the selected pizza style.",
+        "equipment": "Ooni Volt",
+        "timerSeconds": 1200
+      },
+      {
+        "title": "Stretch dough",
+        "instruction": "Stretch one dough ball on a lightly floured surface.",
+        "equipment": "Counter"
+      },
+      {
+        "title": "Top lightly",
+        "instruction": "Add a thin layer of sauce, mozzarella, and pepperoni or basil.",
+        "equipment": "Pizza peel"
+      },
+      {
+        "title": "Bake",
+        "instruction": "Launch onto the stone and turn as needed until evenly browned.",
+        "equipment": "Ooni Volt",
+        "timerSeconds": 300
+      },
+      {
+        "title": "Rest",
+        "instruction": "Rest for 2 minutes, slice, and start the second pizza.",
+        "equipment": "Cutting board",
+        "timerSeconds": 120
+      }
+    ],
+    "effortMinutes": 10,
+    "totalMinutes": 20,
+    "leftoverNote": "Pizza is best fresh; save extra dough and toppings instead of cooked slices.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  },
+  {
+    "id": "lazy-chicken-sandwich",
+    "name": "Ultra-lazy chicken sandwich + fries",
+    "shortName": "Lazy chicken sandwich",
+    "equipment": [
+      "CRISPi"
+    ],
+    "tags": [
+      "Ultra easy"
+    ],
+    "ingredients": [
+      {
+        "id": "breaded-chicken",
+        "name": "Breaded chicken fillets",
+        "amount": 4.0,
+        "unit": "pieces",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "burger-buns",
+        "name": "Burger buns",
+        "amount": 4.0,
+        "unit": "count",
+        "category": "BAKERY",
+        "pantryStaple": false
+      },
+      {
+        "id": "frozen-fries",
+        "name": "Frozen fries",
+        "amount": 1.0,
+        "unit": "lb",
+        "category": "FROZEN",
+        "pantryStaple": false
+      },
+      {
+        "id": "lettuce",
+        "name": "Lettuce",
+        "amount": 4.0,
+        "unit": "leaves",
+        "category": "PRODUCE",
+        "pantryStaple": false
+      },
+      {
+        "id": "pickles",
+        "name": "Pickle slices",
+        "amount": 0.5,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      },
+      {
+        "id": "mayo",
+        "name": "Mayonnaise",
+        "amount": 0.25,
+        "unit": "cup",
+        "category": "PANTRY",
+        "pantryStaple": false
+      }
+    ],
+    "steps": [
+      {
+        "title": "Start fries",
+        "instruction": "Air fry fries at 400°F, shaking twice.",
+        "equipment": "CRISPi basket 1",
+        "timerSeconds": 1080
+      },
+      {
+        "title": "Cook chicken",
+        "instruction": "Air fry chicken fillets in basket 2 until crisp and hot.",
+        "equipment": "CRISPi basket 2",
+        "timerSeconds": 840
+      },
+      {
+        "title": "Toast buns",
+        "instruction": "Toast buns during the final minutes if desired.",
+        "equipment": "Toaster",
+        "timerSeconds": 120
+      },
+      {
+        "title": "Build",
+        "instruction": "Spread mayo and add chicken, lettuce, and pickles.",
+        "equipment": "Counter"
+      },
+      {
+        "title": "Serve",
+        "instruction": "Salt fries and serve immediately.",
+        "equipment": "Plate"
+      }
+    ],
+    "effortMinutes": 5,
+    "totalMinutes": 20,
+    "leftoverNote": "Cook only what you need; the frozen components stay ready for another night.",
+    "baseServings": 2,
+    "description": "",
+    "origin": "CORE"
+  }
+]

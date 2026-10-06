@@ -1,0 +1,39 @@
+name: Validate MealOS Apple app
+
+on:
+  pull_request:
+    paths: ['ios/**', 'app/src/main/java/com/mealos/data/RecipeCatalog.kt', '.github/workflows/ios.yml']
+  push:
+    branches: [main]
+    paths: ['ios/**', 'app/src/main/java/com/mealos/data/RecipeCatalog.kt', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify generated catalog and project
+        run: |
+          python3 ios/scripts/export_catalog.py
+          python3 ios/scripts/generate_project.py
+          git diff --exit-code -- ios/MealOS/Resources/recipes.json ios/Forkware.xcodeproj
+      - name: Test shared Swift logic
+        run: swift test --package-path ios
+      - name: Build universal simulator app
+        run: >-
+          xcodebuild -project ios/Forkware.xcodeproj -scheme Forkware
+          -configuration Debug -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath /tmp/MealOSDerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Test iPhone and iPad workflows
+        run: python3 ios/scripts/run_ui_tests.py --output /tmp/mealos-ui-validation
+      - name: Preserve simulator results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mealos-apple-ui-results
+          path: /tmp/mealos-ui-validation
+          if-no-files-found: ignore

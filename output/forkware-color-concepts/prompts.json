@@ -1,0 +1,25 @@
+{
+  "method": "Built-in image_gen edit",
+  "reference": "../forkware-ios-concepts/04-fw-ligature.png",
+  "paletteSources": [
+    "DESIGN.md",
+    "ios/MealOS/Views/Theme.swift"
+  ],
+  "concepts": [
+    {
+      "id": "01-enamel-pop",
+      "title": "Enamel Pop",
+      "prompt": "Edit the supplied Forkware FW Ligature logo concept. Preserve EXACTLY the recognizable FW ligature geometry, sideways fork F, connected W, thick rounded strokes, proportions, negative spaces, and icon scale from the reference. Change its colors and presentation only. Deep enamel green #083224 icon background. Preserve the continuous FW silhouette but color the upper fork-F portion golden yellow #E5C76B and the lower W portion soft apricot #FFB38B, with a crisp intentional color transition at their joining point. Joyful two-tone mark, clear readability and no gaps added.\nThis must feel like the actual app's enamel cookware-inspired visual identity: deep green, golden yellow, orange, apricot, warm cream. More visually fun and colorful, still clean and recognizable as an iOS app icon. No new decorative objects, sparkles, food illustrations, circuit traces, or extra letterforms. No gradients or 3D. Present on warm cream #F3F0E8 canvas, with one large rounded-square icon above a smaller identical icon next to exact wordmark \"Forkware\" in deep green. Replace the bottom caption with \"01 / Enamel Pop\". Keep generous icon padding. This is a refined color exploration of the same selected logo, not a redesigned monogram."
+    },
+    {
+      "id": "02-golden",
+      "title": "Golden",
+      "prompt": "Edit the supplied Forkware FW Ligature logo concept. Preserve EXACTLY the recognizable FW ligature geometry, sideways fork F, connected W, thick rounded strokes, proportions, negative spaces, and icon scale from the reference. Change its colors and presentation only. Golden yellow #E5C76B icon background, deep enamel green #083224 FW ligature. Add a restrained burnt-orange #C84F13 offset layer immediately behind the mark, just a narrow solid graphic edge offset down-right, like two-color screen printing, not a blurred shadow. Bold sunny food packaging energy, graphic and clean.\nThis must feel like the actual app's enamel cookware-inspired visual identity: deep green, golden yellow, orange, apricot, warm cream. More visually fun and colorful, still clean and recognizable as an iOS app icon. No new decorative objects, sparkles, food illustrations, circuit traces, or extra letterforms. No gradients or 3D. Present on warm cream #F3F0E8 canvas, with one large rounded-square icon above a smaller identical icon next to exact wordmark \"Forkware\" in deep green. Replace the bottom caption with \"02 / Golden\". Keep generous icon padding. This is a refined color exploration of the same selected logo, not a redesigned monogram."
+    },
+    {
+      "id": "03-apricot",
+      "title": "Apricot",
+      "prompt": "Edit the supplied Forkware FW Ligature logo concept. Preserve EXACTLY the recognizable FW ligature geometry, sideways fork F, connected W, thick rounded strokes, proportions, negative spaces, and icon scale from the reference. Change its colors and presentation only. Soft apricot #FFB38B icon background, deep enamel green #083224 FW ligature. A narrow golden yellow #E5C76B solid graphic offset layer sits behind the symbol, visible only at upper-left edges. Warm lively contemporary kitchen brand, crisp flat ink-like color layering, no blurred shadow.\nThis must feel like the actual app's enamel cookware-inspired visual identity: deep green, golden yellow, orange, apricot, warm cream. More visually fun and colorful, still clean and recognizable as an iOS app icon. No new decorative objects, sparkles, food illustrations, circuit traces, or extra letterforms. No gradients or 3D. Present on warm cream #F3F0E8 canvas, with one large rounded-square icon above a smaller identical icon next to exact wordmark \"Forkware\" in deep green. Replace the bottom caption with \"03 / Apricot\". Keep generous icon padding. This is a refined color exploration of the same selected logo, not a redesigned monogram."
+    }
+  ]
+}
