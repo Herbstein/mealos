@@ -182,6 +182,19 @@ public enum PlanCalendar {
         return Calendar(identifier: .gregorian).date(from: parts)!
     }
     public static func weekStart(_ day: Int = day()) -> Int { day - ((day + 3) % 7 + 7) % 7 }
+    public static func monthStart(_ day: Int) -> Int {
+        day - Calendar(identifier: .gregorian).component(.day, from: date(day)) + 1
+    }
+    public static func movingMonth(_ day: Int, by offset: Int) -> Int {
+        let calendar = Calendar(identifier: .gregorian)
+        return self.day(calendar.date(byAdding: .month, value: offset, to: date(day))!)
+    }
+    /// Complete Monday–Sunday rows, including adjacent-month dates.
+    public static func monthDays(_ day: Int) -> [Int] {
+        let first = monthStart(day)
+        let last = movingMonth(first, by: 1) - 1
+        return Array(weekStart(first)..<(weekStart(last) + 7))
+    }
     public static func label(_ day: Int) -> String { date(day).formatted(.dateTime.weekday(.wide).month(.abbreviated).day()) }
     public static func range(_ start: Int, weeks: Int = 1) -> String {
         date(start).formatted(.dateTime.month(.abbreviated).day().year()) + " – " + date(start + weeks * 7 - 1).formatted(.dateTime.month(.abbreviated).day().year())

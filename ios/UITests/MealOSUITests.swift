@@ -146,6 +146,52 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Start the potatoes"].firstMatch.existsOrWait(timeout: 10))
         capture("07-cooking-restored")
     }
+    func testCalendarMonthSelectionAndWeek() throws {
+        launch()
+        capture("calendar-month-empty")
+        let initialTitle = app.staticTexts["plan-period-title"].label
+        tap("Next month")
+        XCTAssertNotEqual(app.staticTexts["plan-period-title"].label, initialTitle)
+        tap("Previous month")
+        XCTAssertEqual(app.staticTexts["plan-period-title"].label, initialTitle)
+        tap("Plan tonight")
+        let chicken = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Garlic-herb chicken")).firstMatch
+        XCTAssertTrue(chicken.existsOrWait(timeout: 10)); chicken.tap()
+        capture("calendar-month-detail")
+        for _ in 0..<3 { app.scrollViews.firstMatch.swipeDown() }
+        capture("calendar-month-planned")
+        let selected = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "calendar-day-", "Garlic-herb chicken")).firstMatch
+        XCTAssertTrue(selected.existsOrWait(timeout: 10))
+        let plannedID = selected.identifier
+        let nextDay = Int(plannedID.replacingOccurrences(of: "calendar-day-", with: ""))! + 1
+        tap("calendar-day-\(nextDay)")
+        XCTAssertTrue(app.staticTexts["No meal planned"].exists)
+        tap("Today")
+        tap("Week")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "plan-day-", "Garlic-herb chicken")).firstMatch.exists)
+        for _ in 0..<3 { app.scrollViews.firstMatch.swipeDown() }
+        capture("calendar-week")
+        tap("Month")
+        tap("Next month"); tap("Today")
+        XCTAssertTrue(app.buttons[plannedID].exists)
+        app.terminate(); app.launchArguments = ["--uitesting"]; app.launch(); tap("Plan")
+        XCTAssertTrue(app.buttons[plannedID].existsOrWait(timeout: 10))
+        XCTAssertTrue(app.buttons[plannedID].label.contains("Garlic-herb chicken"))
+        tap("Meal actions"); tap("Remove meal")
+        XCTAssertFalse(app.buttons[plannedID].label.contains("Garlic-herb chicken"))
+    }
+
+    func testCalendarLargeText() throws {
+        launch(arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        capture("calendar-accessibility-month")
+        tap("Week")
+        capture("calendar-accessibility-week")
+        let day = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plan-day-")).firstMatch
+        XCTAssertTrue(day.existsOrWait(timeout: 10)); day.tap()
+        XCTAssertTrue(app.buttons["Cancel"].existsOrWait(timeout: 10))
+        tap("Cancel")
+    }
+
     func testConsecutiveWeeksPersistAndCombineShopping() throws {
         launch()
         launch()
@@ -158,6 +204,7 @@ final class MealOSUITests: XCTestCase {
             XCTAssertTrue(recipe.existsOrWait(timeout: 5)); recipe.tap()
         }
         tap("Plan tonight"); chooseChicken()
+        tap("Week")
         let next = app.buttons["Next week"].firstMatch
         show(next); next.tap()
         let day = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "plan-day-")).firstMatch
@@ -169,7 +216,7 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(future.label.contains("Garlic-herb chicken"))
         capture("multiweek-plan")
         app.terminate(); app.launchArguments = ["--uitesting"]; app.launch(); tap("Plan")
-        show(app.buttons["Next week"].firstMatch); tap("Next week")
+        tap("Week"); show(app.buttons["Next week"].firstMatch); tap("Next week")
         XCTAssertTrue(app.buttons[futureID].existsOrWait(timeout: 5))
         XCTAssertTrue(app.buttons[futureID].label.contains("Garlic-herb chicken"))
         tap("Shop")

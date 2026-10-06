@@ -18,7 +18,7 @@ Core recipes, planning, groceries, pantry, favorites, notes, editing, and cookin
 ## Features
 
 - All 15 original recipes, exported directly from `RecipeCatalog.kt`.
-- Seven-day meal planning with one, two, or dinner-plus-lunch portions.
+- Month calendar with selected-day meal details and a seven-day agenda, with one, two, or dinner-plus-lunch portions. Browse months or weeks, return to Today, and choose, change, remove, or cook a planned meal.
 - Consolidated groceries grouped by category, pantry exclusions, and persistent checkmarks.
 - Favorites, ratings, notes, manual recipes, and customization of bundled recipes as personal copies.
 - Versioned `.mealosrecipe` import/export. Imports open in the editor for review; they never save automatically.

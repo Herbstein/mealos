@@ -70,6 +70,23 @@ final class MealOSCoreTests: XCTestCase {
             XCTAssertTrue((PlanCalendar.weekStart(day)..<(PlanCalendar.weekStart(day) + 7)).contains(day))
         }
     }
+    func testMonthCalendarBoundariesAndNavigation() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        func day(_ year: Int, _ month: Int, _ date: Int) -> Int {
+            PlanCalendar.day(calendar.date(from: DateComponents(year: year, month: month, day: date))!)
+        }
+        let leapDay = day(2024, 2, 29)
+        let february = PlanCalendar.monthDays(leapDay)
+        XCTAssertEqual(february.first, day(2024, 1, 29))
+        XCTAssertEqual(february.last, day(2024, 3, 3))
+        XCTAssertEqual(PlanCalendar.movingMonth(day(2024, 1, 31), by: 1), leapDay)
+        XCTAssertEqual(PlanCalendar.movingMonth(day(2026, 12, 15), by: 1), day(2027, 1, 15))
+        XCTAssertEqual(PlanCalendar.movingMonth(day(2027, 1, 15), by: -1), day(2026, 12, 15))
+        let sixRows = PlanCalendar.monthDays(day(2026, 3, 8))
+        XCTAssertEqual(sixRows.count, 42)
+        XCTAssertEqual(sixRows, Array(day(2026, 2, 23)...day(2026, 4, 5)))
+        XCTAssertEqual(PlanCalendar.monthDays(day(2021, 2, 1)).count, 28)
+    }
     func testMinimalImportedRecipeUsesAndroidDefaults() throws {
         let raw = #"{"name":"Toast","ingredients":[{"name":"Bread","amount":2,"unit":"slices","category":"bakery"}],"steps":[{"title":"Toast","instruction":"Toast the bread."}]}"#
         let recipe = try Documents.importRecipe(Data("```json\n\(raw)\n```".utf8))
