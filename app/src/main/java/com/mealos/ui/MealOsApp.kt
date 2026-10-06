@@ -94,6 +94,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -603,8 +604,10 @@ private fun TodayScreen(
     onRecipe: (String) -> Unit,
     onCook: (String, PortionMode) -> Unit
 ) {
-    val planned = state.plan.sortedBy { it.dayIndex }
-    val tonight = planned.firstOrNull()?.let { entry -> recipes.firstOrNull { it.id == entry.recipeId }?.let { it to entry } }
+    val today = LocalDate.now().toEpochDay().toInt()
+    val start = LocalDate.now().with(DayOfWeek.MONDAY).toEpochDay().toInt()
+    val planned = state.plan.filter { it.dayIndex in start until start + 7 }.sortedBy { it.dayIndex }
+    val tonight = planned.firstOrNull { it.dayIndex == today }?.let { entry -> recipes.firstOrNull { it.id == entry.recipeId }?.let { it to entry } }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
             Text("Your kitchen, ready.", style = MaterialTheme.typography.displayMedium, color = Enamel)
@@ -652,16 +655,19 @@ private fun TodayScreen(
 @Composable
 private fun PlannerScreen(state: MealOsUserState, recipes: List<Recipe>, viewModel: MealOsViewModel, onRecipe: (String) -> Unit) {
     var editingDay by remember { mutableStateOf<Int?>(null) }
+    var weekStart by rememberSaveable { mutableStateOf(LocalDate.now().with(DayOfWeek.MONDAY).toEpochDay().toInt()) }
     val planByDay = state.plan.associateBy { it.dayIndex }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Text("Build the week", style = MaterialTheme.typography.displayMedium)
             Text("Choose familiar dinners; quantities roll directly into Grocery.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        items(7) { day ->
+        item { WeekNavigation(weekStart) { weekStart = it } }
+        items(7) { offset ->
+            val day = weekStart + offset
             val entry = planByDay[day]
             val recipe = entry?.let { planned -> recipes.firstOrNull { it.id == planned.recipeId } }
-            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = if (day == 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+            Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = if (day == LocalDate.now().toEpochDay().toInt()) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -680,7 +686,7 @@ private fun PlannerScreen(state: MealOsUserState, recipes: List<Recipe>, viewMod
                 }
             }
         }
-        if (state.plan.isNotEmpty()) item { TextButton(onClick = viewModel::clearPlan) { Text("Clear the week") } }
+        if (state.plan.any { it.dayIndex in weekStart until weekStart + 7 }) item { TextButton(onClick = { viewModel.clearPlan(weekStart, weekStart + 7) }) { Text("Clear the week") } }
     }
     editingDay?.let { day ->
         androidx.compose.material3.ModalBottomSheet(onDismissRequest = { editingDay = null }) {
@@ -692,7 +698,7 @@ private fun PlannerScreen(state: MealOsUserState, recipes: List<Recipe>, viewMod
                         supportingContent = { Text("${recipe.effortMinutes} min hands-on · ${recipe.equipment.joinToString()}") },
                         leadingContent = { IngredientMark(recipe) },
                         modifier = Modifier.clickable {
-                            viewModel.setPlan(PlanEntry(day, recipe.id, PortionMode.TWO))
+                            viewModel.setPlan(PlanEntry(day, recipe.id, planByDay[day]?.portionMode ?: PortionMode.TWO))
                             editingDay = null
                         }
                     )
@@ -792,19 +798,37 @@ private fun RecipeRow(recipe: Recipe, favorite: Boolean, rating: Int?, onFavorit
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun GroceryScreen(state: MealOsUserState, recipes: List<Recipe>, viewModel: MealOsViewModel) {
-    val groceries = GroceryAggregator.aggregate(state.plan, recipes, state.pantry)
+    var weekStart by rememberSaveable { mutableStateOf(LocalDate.now().with(DayOfWeek.MONDAY).toEpochDay().toInt()) }
+    var weeks by rememberSaveable { mutableStateOf(2) }
+    val plan = state.plan.filter { it.dayIndex in weekStart until weekStart + weeks * 7 }
+    val groceries = GroceryAggregator.aggregate(plan, recipes, state.pantry)
     val grouped = groceries.groupBy { it.category }
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             Text("One clean shop", style = MaterialTheme.typography.displayMedium)
-            Text("Combined from ${state.plan.size} planned meals. Pantry staples are already excluded.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Combined from ${plan.size} planned meals. Pantry staples are already excluded.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item { WeekNavigation(weekStart) { weekStart = it } }
+        item {
+            Column {
+                Text("Shopping window", style = MaterialTheme.typography.titleMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    (1..4).forEach { count -> FilterChip(selected = weeks == count, onClick = { weeks = count }, label = { Text("$count ${if (count == 1) "week" else "weeks"}") }) }
+                }
+                Text(weekRange(weekStart, weeks), style = MaterialTheme.typography.bodyMedium)
+                Text("Repeated ingredients help you compare larger packs. Totals cover the selected dates.", style = MaterialTheme.typography.bodyMedium)
+            }
         }
         if (groceries.isEmpty()) item { EmptyTray("Your list is empty", "Add meals in Plan, or review Pantry staples if something is missing.") }
         grouped.forEach { (category, items) ->
             item { Text(category.label, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 18.dp)) }
-            items(items) { item -> GroceryRow(item, item.id in state.checkedGroceries) { viewModel.toggleGrocery(item.id) } }
+            items(items) { item ->
+                val checkId = "$weekStart:$weeks:${item.id}:${item.amount}"
+                GroceryRow(item, checkId in state.checkedGroceries) { viewModel.toggleGrocery(checkId) }
+            }
         }
     }
 }
@@ -813,7 +837,10 @@ private fun GroceryScreen(state: MealOsUserState, recipes: List<Recipe>, viewMod
 private fun GroceryRow(item: GroceryItem, checked: Boolean, onToggle: () -> Unit) {
     ListItem(
         headlineContent = { Text(item.name, fontWeight = FontWeight.SemiBold, textDecoration = if (checked) TextDecoration.LineThrough else null) },
-        supportingContent = { Text(item.displayAmount) },
+        supportingContent = {
+            val weekCount = item.plannedDays.map { LocalDate.ofEpochDay(it.toLong()).with(DayOfWeek.MONDAY) }.distinct().size
+            Text("${item.displayAmount}\n${if (item.pantryStaple) "Staple · " else ""}Used in ${item.plannedDays.size} meals across $weekCount weeks")
+        },
         leadingContent = { Checkbox(checked = checked, onCheckedChange = { onToggle() }) },
         modifier = Modifier.clip(RoundedCornerShape(16.dp)).clickable(onClick = onToggle)
     )
@@ -1361,9 +1388,27 @@ private fun EmptyTray(title: String, body: String) {
 }
 
 private fun dayLabel(dayIndex: Int): String {
-    val day = LocalDate.now().plusDays(dayIndex.toLong())
-    return if (dayIndex == 0) "Today · ${day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())}"
-    else day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+    val date = LocalDate.ofEpochDay(dayIndex.toLong())
+    val label = date.format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMM d"))
+    return if (date == LocalDate.now()) "Today · $label" else label
+}
+
+private fun weekRange(start: Int, weeks: Int = 1): String {
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy")
+    return "${LocalDate.ofEpochDay(start.toLong()).format(formatter)} – ${LocalDate.ofEpochDay((start + weeks * 7 - 1).toLong()).format(formatter)}"
+}
+
+@Composable
+private fun WeekNavigation(start: Int, onChange: (Int) -> Unit) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onChange(start - 7) }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous week") }
+            Text(weekRange(start), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+            IconButton(onClick = { onChange(start + 7) }) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next week") }
+        }
+        val current = LocalDate.now().with(DayOfWeek.MONDAY).toEpochDay().toInt()
+        if (start != current) TextButton(onClick = { onChange(current) }) { Text("This week") }
+    }
 }
 
 private fun timerLabel(stepTitle: String): String = stepTitle

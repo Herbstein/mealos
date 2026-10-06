@@ -75,7 +75,8 @@ import GoogleSignIn
             let stateDoc = try await base.document("preferences").getDocument(source: .server)
             let recipeDoc = try await base.document("recipes").getDocument(source: .server)
             guard generation == session else { return }
-            let state: UserState? = try payload(stateDoc).map { try Documents.decodeState(Data($0.utf8)) }
+            let statePayload = try payload(stateDoc)
+            let state: UserState? = try statePayload.map { try Documents.decodeState(Data($0.utf8)) }
             let recipes: [Recipe]? = try payload(recipeDoc).map { try Documents.recipes(Data($0.utf8)) }
             guard generation == session else { return }
             let dirty = store.snapshot.cloudOwnerUID == uid ? store.snapshot.dirtyCloudDocuments ?? [] : []
@@ -84,6 +85,7 @@ import GoogleSignIn
             }
             ready = true; connecting = false; status = "Synced"
             if !stateDoc.exists || dirty.contains("preferences") { upload("preferences") }
+            else if let statePayload, isLegacyPlan(statePayload) { store.updateState { _ in } }
             if !recipeDoc.exists || dirty.contains("recipes") { upload("recipes") }
             for name in ["preferences", "recipes"] {
                 let listener = base.document(name).addSnapshotListener(includeMetadataChanges: true) { [weak self] document, error in
@@ -95,7 +97,10 @@ import GoogleSignIn
                         do {
                             if let text = try self.payload(document) {
                                 let saved: Bool
-                                if name == "preferences" { saved = store.applyCloud(state: try Documents.decodeState(Data(text.utf8))) }
+                                if name == "preferences" {
+                                    saved = store.applyCloud(state: try Documents.decodeState(Data(text.utf8)))
+                                    if saved && self.isLegacyPlan(text) { store.updateState { _ in } }
+                                }
                                 else { saved = store.applyCloud(recipes: try Documents.recipes(Data(text.utf8))) }
                                 if !saved {
                                     self.stop()
@@ -112,6 +117,10 @@ import GoogleSignIn
             guard generation == session else { return }
             connecting = false; status = "Not connected · saved on this device"; self.error = error.localizedDescription
         }
+    }
+    private func isLegacyPlan(_ text: String) -> Bool {
+        let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any]
+        return object?["schemaVersion"] as? Int == 1
     }
     private func payload(_ snapshot: DocumentSnapshot) throws -> String? {
         guard snapshot.exists else { return nil }

@@ -71,10 +71,13 @@ internal class MealOsCloudSync(private val repository: MealOsRepository) {
 
     private suspend fun prepareState(document: DocumentReference) {
         val remote = document.get().awaitResult().getString("payload")
-        val decoded = remote?.let(CloudDocumentCodec::decodeState)
+        val decoded = remote?.let { requireNotNull(CloudDocumentCodec.decodeState(it)) { "Unsupported meal plan format; update MealOS before syncing." } }
         if (decoded != null) {
             lastStatePayload = CloudDocumentCodec.encodeState(decoded)
             repository.replaceUserState(decoded)
+            if (org.json.JSONObject(remote!!).optInt("schemaVersion") == 1) {
+                document.set(cloudValue(lastStatePayload!!)).awaitResult()
+            }
         } else {
             val local = CloudDocumentCodec.encodeState(repository.state.first())
             lastStatePayload = local
@@ -106,7 +109,12 @@ internal class MealOsCloudSync(private val repository: MealOsRepository) {
             val canonical = CloudDocumentCodec.encodeState(decoded)
             if (canonical != lastStatePayload) {
                 lastStatePayload = canonical
-                worker.launch { repository.replaceUserState(decoded) }
+                worker.launch {
+                    repository.replaceUserState(decoded)
+                    if (org.json.JSONObject(payload).optInt("schemaVersion") == 1) {
+                        document.set(cloudValue(canonical)).addOnFailureListener(::reportFailure)
+                    }
+                }
             }
         }
     }
@@ -161,7 +169,7 @@ internal class MealOsCloudSync(private val repository: MealOsRepository) {
     }
 
     private fun cloudValue(payload: String): Map<String, Any> = mapOf(
-        "schemaVersion" to CloudDocumentCodec.SCHEMA_VERSION,
+        "schemaVersion" to 1,
         "payload" to payload,
         "updatedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
     )

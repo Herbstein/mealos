@@ -105,7 +105,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     fun toggleGrocery(id: String) = launch { repository.toggleGrocery(id) }
     fun setPlan(entry: PlanEntry) = launch { repository.setPlanEntry(entry) }
     fun removePlan(dayIndex: Int) = launch { repository.removePlanEntry(dayIndex) }
-    fun clearPlan() = launch { repository.clearPlan() }
+    fun clearPlan(startDay: Int, endDay: Int) = launch { repository.clearPlan(startDay, endDay) }
 
     fun startNewRecipe() {
         _editorState.value = RecipeEditorState(blankRecipe())
@@ -270,7 +270,7 @@ class MealOsViewModel(application: Application) : AndroidViewModel(application) 
     fun seedPlanIfEmpty() {
         if (userState.value.plan.isNotEmpty()) return
         recipes.value.take(5).forEachIndexed { index, recipe ->
-            setPlan(PlanEntry(index, recipe.id))
+            setPlan(PlanEntry(java.time.LocalDate.now().toEpochDay().toInt() + index, recipe.id))
         }
     }
 

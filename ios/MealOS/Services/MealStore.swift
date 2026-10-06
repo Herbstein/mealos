@@ -27,7 +27,7 @@ import UserNotifications
             try? FileManager.default.removeItem(at: file.url)
         }
         #endif
-        do { snapshot = try file.read(); durableSnapshot = snapshot } catch {
+        do { snapshot = try file.read(); durableSnapshot = snapshot; _ = persist() } catch {
             storageHealthy = false
             self.error = "Your saved data could not be read. It has been left untouched. Restore the file or contact support before saving changes. \(error.localizedDescription)"
         }
@@ -47,7 +47,10 @@ import UserNotifications
     }
     func updateState(_ mutation: (inout UserState) -> Void) {
         guard storageHealthy else { return }
-        mutation(&snapshot.state); markDirty("preferences"); if persist() { onCloudChange?(false) }
+        let previousPlan = snapshot.state.plan
+        mutation(&snapshot.state)
+        if previousPlan != snapshot.state.plan { snapshot.state.checkedGroceries.removeAll() }
+        markDirty("preferences"); if persist() { onCloudChange?(false) }
     }
     @discardableResult func applyCloud(state: UserState? = nil, recipes: [Recipe]? = nil) -> Bool {
         guard storageHealthy else { return false }

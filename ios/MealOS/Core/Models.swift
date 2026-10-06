@@ -92,7 +92,7 @@ public struct PlanEntry: Codable, Equatable, Identifiable, Sendable {
     public init(day: Int, recipe: String, portion: Portion) { self.day = day; self.recipe = recipe; self.portion = portion }
 }
 public struct UserState: Codable, Equatable, Sendable {
-    public var schemaVersion = 1
+    public var schemaVersion = 2
     public var favorites: Set<String> = []
     public var ratings: [String: Int] = [:]
     public var notes: [String: String] = [:]
@@ -100,6 +100,25 @@ public struct UserState: Codable, Equatable, Sendable {
     public var checkedGroceries: Set<String> = []
     public var plan: [PlanEntry] = []
     public init() {}
+    private enum CodingKeys: String, CodingKey { case schemaVersion, favorites, ratings, notes, pantry, checkedGroceries, plan }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let version = try c.decode(Int.self, forKey: .schemaVersion)
+        guard (1...2).contains(version) else { throw MealOSError("Update MealOS to read this plan.") }
+        favorites = try c.decode(Set<String>.self, forKey: .favorites)
+        ratings = try c.decode([String: Int].self, forKey: .ratings)
+        notes = try c.decode([String: String].self, forKey: .notes)
+        pantry = try c.decode(Set<String>.self, forKey: .pantry)
+        checkedGroceries = try c.decode(Set<String>.self, forKey: .checkedGroceries)
+        plan = try c.decode([PlanEntry].self, forKey: .plan)
+        if version == 1 {
+            guard plan.allSatisfy({ (0...6).contains($0.day) }) else { throw MealOSError("Invalid legacy plan days.") }
+            let monday = PlanCalendar.weekStart()
+            plan = plan.map { PlanEntry(day: monday + $0.day, recipe: $0.recipe, portion: $0.portion) }
+        }
+        guard Set(plan.map(\.day)).count == plan.count else { throw MealOSError("Duplicate plan dates.") }
+    }
+
 }
 public struct GroceryItem: Identifiable, Equatable, Sendable {
     public var id: String
@@ -107,6 +126,8 @@ public struct GroceryItem: Identifiable, Equatable, Sendable {
     public var amount: Double
     public var unit: String
     public var category: IngredientCategory
+    public var plannedDays: Set<Int> = []
+    public var pantryStaple = false
     public var quantity: String { Ingredient.format(amount) + " " + unit }
 }
 public enum Groceries {
@@ -117,8 +138,8 @@ public enum Groceries {
             for ingredient in recipe.ingredients where !pantry.contains(ingredient.id) {
                 let key = "\(ingredient.id):\(ingredient.unit)"
                 let amount = ingredient.amount * Double(entry.portion.servings) / Double(max(1, recipe.baseServings))
-                if result[key] != nil { result[key]!.amount += amount }
-                else { result[key] = GroceryItem(id: key, name: ingredient.name, amount: amount, unit: ingredient.unit, category: ingredient.category) }
+                if result[key] != nil { result[key]!.amount += amount; result[key]!.plannedDays.insert(entry.day); result[key]!.pantryStaple = result[key]!.pantryStaple || ingredient.pantryStaple }
+                else { result[key] = GroceryItem(id: key, name: ingredient.name, amount: amount, unit: ingredient.unit, category: ingredient.category, plannedDays: [entry.day], pantryStaple: ingredient.pantryStaple) }
             }
         }
         return result.values.sorted { a, b in
@@ -146,4 +167,23 @@ public struct CookingTimer: Codable, Identifiable, Equatable, Sendable {
     }
     public mutating func pause(at now: Date) { remaining = Double(seconds(at: now)); endAt = nil }
     public mutating func reset() { endAt = nil; remaining = duration }
+}
+
+public enum PlanCalendar {
+    // Use UTC only to encode civil dates; local dates and DST never shift a meal.
+    public static func day(_ date: Date = Date()) -> Int {
+        let local = Calendar(identifier: .gregorian)
+        var utc = local; utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        return Int(utc.date(from: local.dateComponents([.year, .month, .day], from: date))!.timeIntervalSince1970 / 86400)
+    }
+    public static func date(_ day: Int) -> Date {
+        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        let parts = utc.dateComponents([.year, .month, .day], from: Date(timeIntervalSince1970: Double(day) * 86400))
+        return Calendar(identifier: .gregorian).date(from: parts)!
+    }
+    public static func weekStart(_ day: Int = day()) -> Int { day - ((day + 3) % 7 + 7) % 7 }
+    public static func label(_ day: Int) -> String { date(day).formatted(.dateTime.weekday(.wide).month(.abbreviated).day()) }
+    public static func range(_ start: Int, weeks: Int = 1) -> String {
+        date(start).formatted(.dateTime.month(.abbreviated).day().year()) + " – " + date(start + weeks * 7 - 1).formatted(.dateTime.month(.abbreviated).day().year())
+    }
 }

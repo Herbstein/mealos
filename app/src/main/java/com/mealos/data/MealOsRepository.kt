@@ -17,7 +17,27 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
-private val Context.dataStore by preferencesDataStore(name = "mealos_state")
+private val Context.dataStore by preferencesDataStore(name = "mealos_state", produceMigrations = {
+    listOf(object : androidx.datastore.core.DataMigration<Preferences> {
+        private val legacy = stringPreferencesKey("weekly_plan")
+        private val dated = stringPreferencesKey("dated_plan")
+        override suspend fun shouldMigrate(currentData: Preferences) = currentData[dated] == null
+        override suspend fun migrate(currentData: Preferences): Preferences {
+            val result = currentData.toMutablePreferences()
+            val entries = JSONArray(currentData[legacy] ?: "[]")
+            val today = java.time.LocalDate.now().toEpochDay().toInt()
+            for (i in 0 until entries.length()) {
+                val entry = entries.getJSONObject(i)
+                val day = entry.getInt("day")
+                require(day in 0..6)
+                entry.put("day", today + day)
+            }
+            result[dated] = entries.toString()
+            return result
+        }
+        override suspend fun cleanUp() {}
+    })
+})
 
 class MealOsRepository(private val context: Context) {
     private object Keys {
@@ -25,7 +45,7 @@ class MealOsRepository(private val context: Context) {
         val ratings = stringPreferencesKey("ratings")
         val notes = stringPreferencesKey("notes")
         val pantry = stringSetPreferencesKey("pantry")
-        val plan = stringPreferencesKey("weekly_plan")
+        val plan = stringPreferencesKey("dated_plan")
         val checkedGroceries = stringSetPreferencesKey("checked_groceries")
         val customRecipes = stringPreferencesKey("custom_recipes")
     }
@@ -77,9 +97,9 @@ class MealOsRepository(private val context: Context) {
         }
     }
 
-    suspend fun clearPlan() {
+    suspend fun clearPlan(startDay: Int, endDay: Int) {
         context.dataStore.edit { prefs ->
-            prefs[Keys.plan] = "[]"
+            prefs[Keys.plan] = encodePlan(decodePlan(prefs[Keys.plan]).filterNot { it.dayIndex in startDay until endDay })
             prefs[Keys.checkedGroceries] = emptySet()
         }
     }
