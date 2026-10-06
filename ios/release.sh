@@ -67,7 +67,7 @@ fi
 # Read the existing project without regenerating it: Xcode may contain local
 # signing edits that the generator intentionally does not include.
 project_value() {
-    sed -n "s/^[[:space:]]*$1 = \(.*\);/\1/p" Forkware.xcodeproj/project.pbxproj | head -1 | tr -d '"'
+    sed -n "s/^[[:space:]]*\"\{0,1\}$1\"\{0,1\}[[:space:]]*=[[:space:]]*\(.*\);/\1/p" Forkware.xcodeproj/project.pbxproj | head -1 | tr -d '"'
 }
 team="${DEVELOPMENT_TEAM:-$(project_value DEVELOPMENT_TEAM)}"
 version="${MARKETING_VERSION:-$(project_value MARKETING_VERSION)}"
