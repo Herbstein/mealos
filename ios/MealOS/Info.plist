@@ -50,6 +50,8 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>ForkwareBackendURL</key>
+	<string>$(FORKWARE_BACKEND_URL)</string>
 	<key>MealOSBridgeURL</key>
 	<string>$(MEALOS_BRIDGE_URL)</string>
 	<key>NSCameraUsageDescription</key>

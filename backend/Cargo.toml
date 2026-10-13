@@ -1,0 +1,33 @@
+[package]
+name = "forkware-backend"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+
+[features]
+test-fixtures = []
+
+[dependencies]
+axum = "0.8"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde"] }
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "postgres", "uuid", "chrono", "json", "derive"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net", "time"] }
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["serde", "v4"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+rsa = { version = "0.9", features = ["pem"] }
+
+[profile.release]
+lto = "thin"
+strip = true

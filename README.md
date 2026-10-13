@@ -16,6 +16,8 @@ The Apple catalog exporter still reads `app/src/main/java/com/mealos/data/Recipe
 
 ## Shared services and product guidance
 
-The Firebase library and Railway assistant remain in use by the Apple client. Active development targets `ios/`, `bridge/`, and shared data/services needed by the Apple app.
+The Firebase library and Railway assistant remain in use by the Apple client. Active development targets `ios/`, `backend/`, and shared data/services needed by the Apple app.
 
 See [Firebase sync](docs/FIREBASE_SYNC.md), [Recipe Assistant setup](docs/RECIPE_ASSISTANT.md), [product decisions](PRODUCT.md), and the [visual system](DESIGN.md). Android-specific instructions in these documents are historical reference.
+
+The [Rust backend](backend/README.md) contains the new Postgres and Apple authentication foundation. The [backend and recipe data plan](docs/BACKEND_PLAN.md) describes the planned migration to a Railway Serverless API and Postgres, including importing, versioning, sharing, offline sync, and estimated hosting costs.

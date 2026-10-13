@@ -15,6 +15,47 @@ The Firebase Apple app (`com.arjunakankipati.forkware`) is registered in the exi
 
 Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with the same Google account used on Android to access the same cloud library. Assistant access uses the existing server-side UID allowlist.
 
+## Apple account and Rust backend (0.2)
+
+Settings now offers native Sign in with Apple for `com.arjunakankipati.forkware`.
+The target includes the Sign in with Apple entitlement. Refresh the development
+provisioning profile after enabling the capability in the Apple Developer portal.
+The default API base is `https://forkware.arjunakankipati.com/api`; the hostname
+root is reserved for the marketing landing site. Override it in ignored
+`ios/Config.local.xcconfig` using xcconfig's escaped slash syntax:
+
+```xcconfig
+FORKWARE_BACKEND_URL = https:/$()/your-host.example/api
+```
+
+The client appends `v1/auth/apple/challenge`, `v1/auth/apple`, `v1/auth/refresh`,
+`v1/auth/logout`, and `v1/me`. Route `/api/*` to the Rust service, preserving the
+prefix. The service also accepts unprefixed routes for direct Railway access.
+The Rust API is deployed to Railway at this base URL. The hostname currently
+routes to that service, with `/` reserved for the future marketing site. Never point this URL at the old assistant.
+
+The app requests a five-minute challenge before opening Apple's sheet, supplies
+its SHA-256 nonce and a checked state, then exchanges the Apple identity token.
+Access and refresh tokens are saved together in a device-only Keychain item,
+scoped to the backend URL. Concurrent refreshes share one request. A failed
+refresh requires a new Apple sign-in because the single-use token may already
+have rotated. GET account checks retry transient serverless wake failures;
+credential exchanges are not automatically replayed. Launch and foreground
+checks restore the session and check Apple credential state. Explicit sign-out
+clears Keychain and attempts server revocation; an offline failure is reported.
+
+Apple sign-in currently connects the account only. It does not migrate or upload
+local recipes, link Google and Apple accounts, or grant assistant access. Google
+library sync and the existing assistant remain available separately. Recipe
+writes/sync, account deletion, and Apple's server-to-server revocation lifecycle
+remain release prerequisites described in the backend plan.
+
+Run `swift test --package-path ios` for account transport/session and existing
+core tests. On a signed device, verify first sign-in, cancellation, app relaunch,
+foreground restoration, sign-out, revoking access in Apple settings, and offline
+handling against the deployed Rust API. Apple credentials are never mocked in
+production; the unit tests inject only their own HTTP transport and storage.
+
 ## Features
 
 - All 15 original recipes, exported directly from `RecipeCatalog.kt`.
