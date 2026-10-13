@@ -21,6 +21,18 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(button.existsOrWait(timeout: 15), "Missing button: \(label)\n\(app.debugDescription)")
         button.tap()
     }
+    func testAppleAccountSettings() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        tap("Settings")
+        XCTAssertTrue(app.navigationBars["Settings"].existsOrWait(timeout: 10))
+        let apple = app.buttons["apple-account-sign-in"]
+        XCTAssertTrue(apple.existsOrWait(timeout: 10))
+        XCTAssertTrue(apple.isEnabled && apple.isHittable)
+        XCTAssertTrue(app.buttons["Sign in with Google"].exists)
+        capture("apple-account-settings")
+        // Real Apple authorization requires a signed device and a deployed API.
+    }
     func testHomeOverviewAndNavigation() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()

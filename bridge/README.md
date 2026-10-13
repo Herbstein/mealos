@@ -1,3 +1,5 @@
+> Legacy assistant service used by the current iOS client. New recipe and Apple authentication development lives in [the Rust backend](../backend/README.md).
+
 # MealOS recipe bridge
 
 This is the stateless request gateway used by the native MealOS recipe assistant. It stores no chats, scans, or recipes.

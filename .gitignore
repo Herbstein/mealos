@@ -19,3 +19,15 @@ firebase-debug.log
 ios/scripts/__pycache__/
 
 ios/.release.env
+
+# Backend dependencies and local secrets
+bridge/node_modules/
+bridge/.env
+bridge/.env.*
+!bridge/.env.example
+
+backend/target/
+backend/node_modules/
+backend/.env
+backend/.env.*
+!backend/.env.example
