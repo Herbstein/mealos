@@ -110,6 +110,12 @@ async fn database_http_and_serverless_lifecycle() {
         .0,
         413
     );
+    assert_eq!(
+        request(&app, "POST", "/api/v1/recipe-chat", json!({}), None)
+            .await
+            .0,
+        401
+    );
     let owner = login(&app, &signer, "owner").await;
     let guest = login(&app, &signer, "guest").await;
     let owner_id: Uuid = owner["user"]["id"].as_str().unwrap().parse().unwrap();
@@ -136,7 +142,68 @@ async fn database_http_and_serverless_lifecycle() {
         )
         .await
         .0,
-        501
+        503
+    );
+
+    // Access checks and assistant-specific body limits run before any provider call.
+    let configured = http::router(AppState::with_assistant(
+        pool.clone(),
+        AppleVerifier::with_test_keys(AUDIENCE.into(), signer.keys.clone()),
+        Some(
+            forkware_backend::assistant::Assistant::new(
+                "test-only-key".into(),
+                std::collections::HashSet::from([owner_id]),
+            )
+            .unwrap(),
+        ),
+    ));
+    assert_eq!(
+        request(
+            &configured,
+            "GET",
+            "/api/v1/me",
+            Value::Null,
+            access(&owner)
+        )
+        .await
+        .1["assistantAllowed"],
+        true
+    );
+    assert_eq!(
+        request(
+            &configured,
+            "POST",
+            "/api/v1/recipe-chat",
+            json!({"model":"sonnet","messages":[{"role":"user","content":"hi"}]}),
+            access(&guest)
+        )
+        .await
+        .0,
+        403
+    );
+    assert_eq!(
+        request(
+            &configured,
+            "POST",
+            "/api/v1/recipe-chat",
+            json!({"model":"invalid","messages":[{"role":"user","content":"x".repeat(25_000)}]}),
+            access(&owner)
+        )
+        .await
+        .0,
+        400
+    );
+    assert_eq!(
+        request(
+            &configured,
+            "POST",
+            "/api/v1/recipe-chat",
+            json!({"model":"sonnet","messages":[{"role":"user","content":"x".repeat(260_000)}]}),
+            access(&owner)
+        )
+        .await
+        .0,
+        413
     );
 
     let input = credentials(&app, &signer, "owner").await;

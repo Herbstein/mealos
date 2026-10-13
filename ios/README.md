@@ -2,7 +2,7 @@
 
 Forkware is the displayed app name; the Xcode project and scheme are also named `Forkware`.
 
-A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format, Firebase account data, and Railway assistant. The Android app in `app/` is deprecated as of October 6, 2026 and is no longer developed or maintained. This Apple client is the active development target. The catalog exporter still reads the retained Android `RecipeCatalog.kt` seed data.
+A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format and Firebase library data, with Claude through the Rust backend and Apple PCC fallback. The Android app in `app/` is deprecated as of October 6, 2026 and is no longer developed or maintained. This Apple client is the active development target. The catalog exporter still reads the retained Android `RecipeCatalog.kt` seed data.
 
 ## Open and run
 
@@ -11,9 +11,9 @@ A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Andro
 3. Select the **Forkware** scheme and an iPhone or iPad simulator, then Run.
 4. To install on your devices, select your Apple development team under **Signing & Capabilities**, then run on the connected device. Do not commit personal signing overrides.
 
-The Firebase Apple app (`com.arjunakankipati.forkware`) is registered in the existing `mealos-af8fc` project. Its public client configuration is bundled, and `Config.xcconfig` points at `https://mealos.arjunakankipati.com`. No server credential or assistant subscription token is included. Google sign-in and assistant requests still need validation in a running Apple app. A health request to the configured assistant hostname failed DNS resolution on this Mac during setup (September 10, 2026); confirm the domain resolves before testing assistant calls.
+The Firebase Apple app (`com.arjunakankipati.forkware`) remains registered in `mealos-af8fc` for legacy library sync. `Config.xcconfig` points account and assistant requests at `https://forkware.arjunakankipati.com/api`. No server credential or assistant token is included in the app.
 
-Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with the same Google account used on Android to access the same cloud library. Assistant access uses the existing server-side UID allowlist.
+Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with the same Google account used on Android to access the same cloud library. Claude access uses a backend user UUID allowlist after Apple sign-in.
 
 ## Apple account and Rust backend (0.2)
 
@@ -45,8 +45,7 @@ checks restore the session and check Apple credential state. Explicit sign-out
 clears Keychain and attempts server revocation; an offline failure is reported.
 
 Apple sign-in currently connects the account only. It does not migrate or upload
-local recipes, link Google and Apple accounts, or grant assistant access. Google
-library sync and the existing assistant remain available separately. Recipe
+local recipes or link Google and Apple accounts. Claude access is separately controlled by the backend allowlist. Google library sync remains available. Recipe
 writes/sync, account deletion, and Apple's server-to-server revocation lifecycle
 remain release prerequisites described in the backend plan.
 
@@ -95,7 +94,7 @@ For a replacement Apple Firebase registration, use the Apple `GoogleService-Info
 ```sh
 python3 ios/scripts/configure.py \
   --firebase-plist /absolute/path/GoogleService-Info.plist \
-  --bridge-url https://your-existing-assistant-host \
+  --backend-url https://forkware.arjunakankipati.com/api \
   --team YOURTEAMID
 ```
 
@@ -205,4 +204,12 @@ Before treating this as device-ready, run these checks:
 - Scan and photo OCR; authorized and unauthorized assistant accounts; timeout and retry.
 - Timer pause/resume/restart, app backgrounding/termination, denied notifications, Focus, Silent mode, and a real-device restart.
 
-Native simulator validation is now possible with Xcode 26.6 and iOS 26.5. See [the validation report](validation/2026-09-10/REPORT.md) for observed results, fixes, screenshots, and the remaining real-device/cloud checks.
+Historical simulator validation used Xcode 26.6 and iOS 26.5; current assistant builds require Xcode 27. See [the validation report](validation/2026-09-10/REPORT.md) for observed results, fixes, screenshots, and the remaining real-device/cloud checks.
+
+## Assistant providers
+
+Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment target through the Rust backend; PCC fallback is available only on supported iOS 27+ devices. `ForkwareBackendURL` configures account and assistant requests. Sign in with Apple in Settings for Claude access; Google authentication remains solely for library sync.
+
+The target includes `com.apple.developer.private-cloud-compute`. Enable the approved PCC entitlement for the app identifier and regenerate signing profiles before device/TestFlight distribution. Simulator builds verify compilation but cannot establish that the entitlement, Apple quota, and cloud inference work on a real device.
+
+Claude failures leave the conversation and current draft intact. Credit exhaustion, capacity limits, provider failures, and eligible transport failures offer a clearly labeled PCC button; account denial, invalid requests and explicit refusals do not. PCC sends a conservative 16 KB UTF-8 suffix of the conversation with the current draft, reserving context for instructions/reasoning/output. An oversized latest request is rejected rather than silently truncated. It never presents generated URLs as searched sources. If PCC is unavailable or out of quota, a persistent status explains why.

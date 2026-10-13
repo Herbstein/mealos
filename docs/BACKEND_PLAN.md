@@ -2,7 +2,7 @@
 
 Updated October 13, 2026. Target: Forkware for iPhone and iPad only.
 
-Use Railway Serverless for the Rust API, with Postgres in the same Railway project. Build the new service in `backend/`; preserve `bridge/` as the legacy assistant during migration. Keep Postgres running initially and connect over Railway's private network. This replaces the earlier Supabase proposal and targets a small operating budget for the first 100 users.
+Use Railway Serverless for the Rust API, with Postgres in the same Railway project. Build the new service in `backend/`; the legacy assistant bridge has been removed. Keep Postgres running initially and connect over Railway's private network. This replaces the earlier Supabase proposal and targets a small operating budget for the first 100 users.
 
 The Rust API and Postgres foundation are deployed in the existing Railway `mealos` project. Later import/write/sync phases remain planned. Firebase remains active until migration is complete.
 
@@ -10,7 +10,7 @@ The first backend foundation is implemented in `backend/` using Rust, Axum, Toki
 
 ## Hosting and identity
 
-- One Rust API will handle recipe access, imports, publishing, and synchronization. Fold assistant integration into this service after choosing PCC or another cloud processing option; assistant execution is disabled in the initial foundation.
+- One Rust API will handle recipe access, imports, publishing, and synchronization. Claude assistant execution now uses this service with a workspace-scoped API key; supported Apple devices offer PCC fallback. The legacy bridge is removed.
 - Enable Railway Serverless on the API and redeploy for the setting to take effect.
 - One Postgres service holds shared recipes and access-controlled personal data. Only the backend connects to it; database credentials never ship in the app.
 - Use a small object-storage bucket for photos and temporary attachments.

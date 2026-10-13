@@ -1,6 +1,5 @@
 package com.mealos.data
 
-import com.mealos.BuildConfig
 import com.mealos.model.ChatRole
 import com.mealos.model.RecipeChatMessage
 import com.mealos.model.RecipeAssistantModel
@@ -20,7 +19,8 @@ data class RecipeAssistantResponse(
 )
 
 class RecipeAssistantClient(
-    private val baseUrl: String = BuildConfig.RECIPE_BRIDGE_URL,
+    // Archived Android client: the legacy assistant service has been retired.
+    private val baseUrl: String = "",
     private val idTokenProvider: suspend () -> String = FirebaseIdTokenProvider::get
 ) {
     suspend fun chat(
@@ -28,7 +28,7 @@ class RecipeAssistantClient(
         model: RecipeAssistantModel
     ): RecipeAssistantResponse = withContext(Dispatchers.IO) {
         check(baseUrl.isNotBlank()) {
-            "Recipe Assistant has not been connected yet. Add the Railway address to the app build."
+            "This Android assistant has been retired. Use the current Forkware iOS app."
         }
         val token = idTokenProvider()
         val connection = (URL("${baseUrl.trimEnd('/')}/v1/recipe-chat").openConnection() as HttpURLConnection).apply {

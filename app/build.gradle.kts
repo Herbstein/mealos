@@ -8,7 +8,6 @@ val releaseKeystorePath = providers.environmentVariable("MEALOS_KEYSTORE_PATH").
 val releaseKeystorePassword = providers.environmentVariable("MEALOS_KEYSTORE_PASSWORD").orNull
 val releaseKeyAlias = providers.environmentVariable("MEALOS_KEY_ALIAS").orNull
 val releaseKeyPassword = providers.environmentVariable("MEALOS_KEY_PASSWORD").orNull
-val recipeBridgeUrl = providers.environmentVariable("MEALOS_BRIDGE_URL").orNull.orEmpty()
 val releaseSigningReady = listOf(
     releaseKeystorePath,
     releaseKeystorePassword,
@@ -26,7 +25,6 @@ android {
         targetSdk = 37
         versionCode = providers.environmentVariable("MEALOS_VERSION_CODE").orNull?.toIntOrNull() ?: 7_001
         versionName = providers.environmentVariable("MEALOS_VERSION_NAME").orNull ?: "0.7.1"
-        buildConfigField("String", "RECIPE_BRIDGE_URL", "\"${recipeBridgeUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }

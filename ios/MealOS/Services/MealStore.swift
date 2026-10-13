@@ -14,6 +14,8 @@ import UserNotifications
     var state: UserState { snapshot.state }
     var recipes: [Recipe] { core + snapshot.customRecipes }
     var groceries: [GroceryItem] { Groceries.aggregate(plan: state.plan, recipes: recipes, pantry: state.pantry) }
+    @Published var assistantNotice: String?
+    @Published var canTryPCC = false
     var assistant: AssistantHistory { snapshot.assistant }
     init() {
         var folder = "MealOS"

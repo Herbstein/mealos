@@ -1,6 +1,6 @@
 # Forkware backend
 
-The Rust backend uses Axum, Tokio, and SQLx for Postgres, native Sign in with Apple, and recipe access. Assistant execution is deferred until the PCC/other cloud processing decision; no AI SDK or subscription credentials are loaded here. The legacy assistant remains in `../bridge/`. The current iOS client still uses Firebase; native Apple sign-in and Keychain session integration are wired in the iOS 0.2 client. The Railway deployment is configured below; signed-device validation remains pending.
+The Rust backend uses Axum, Tokio, SQLx/Postgres, native Sign in with Apple, and the Claude Messages API. The iOS assistant authenticates with its existing backend session; Firebase remains only for legacy library sync. Claude credentials are server-only. Apple Private Cloud Compute is an explicit device-side fallback. The legacy Node assistant bridge has been removed.
 
 ## Local development
 
@@ -44,7 +44,7 @@ Enable Sign in with Apple for the native bundle ID in the Apple Developer accoun
 6. `POST /v1/auth/refresh` with `{ "refreshToken": "..." }` rotates both tokens without extending the absolute session lifetime. Serialize refreshes on the client and persist the replacement pair together. Reuse fails; if a refresh response is lost, a fresh Apple sign-in is required.
 7. `POST /v1/auth/logout` with `{}` and the access bearer token revokes that session only. Tokens are stored only as SHA-256 hashes in Postgres.
 
-`GET /v1/me` returns only the authenticated user's ID and `assistantAllowed: false`. `POST /v1/recipe-chat` returns 501 until assistant integration is implemented. Private or unavailable recipes return the same 404. An owner reads their latest saved version; other authenticated users read only an approved, active, public version. Unlisted links and saved-library version access are not implemented yet.
+`GET /v1/me` returns the authenticated user ID and whether that account has configured Claude access. `POST /v1/recipe-chat` requires a backend session and the assistant allowlist. Private or unavailable recipes return the same 404. An owner reads their latest saved version; other authenticated users read only an approved, active, public version. Unlisted links and saved-library version access are not implemented yet.
 
 This foundation verifies native identity tokens, rather than exchanging Apple authorization codes for Apple refresh tokens. It does not yet process Apple server-to-server revocation notifications or implement account deletion/token revocation with Apple. Complete those lifecycle integrations before a public release. The native client must check credential state and clear/revoke its backend session when Apple authorization is revoked. Logout here is a Forkware session logout, not revocation of Apple consent.
 
@@ -56,7 +56,7 @@ Authentication POST bodies must be JSON objects. Auth endpoints accept at most 2
 
 For a new staging environment, run `npm ci` for the deployment-only Railway SDK, link the intended Railway project/environment, then run `railway config plan` from this directory. Review the project/resource names before applying. Connect the API's source repository with root `/backend`. This definition is for a new environment, not the existing production services listed below.
 
-For the existing production project, run `railway config pull` into a separate review location first and merge the backend settings with its actual service names, variables, and other resources. Keep the existing assistant service separate, preserving its secrets, domain, and Firebase settings. Do not blindly apply this bootstrap definition over an existing environment. The named partial limits ownership to these resources, but existing projects must use a compatible partial setup.
+For the existing production project, run `railway config pull` into a separate review location first and merge the backend settings with its actual service names, variables, and other resources. Do not blindly apply this bootstrap definition over an existing environment. The named partial limits ownership to these resources, but existing projects must use a compatible partial setup.
 
 Before routing traffic:
 
@@ -65,7 +65,7 @@ Before routing traffic:
 - Enable scheduled volume backups and test a restore. Keep an independent export as described in the backend plan.
 - Redeploy after enabling Serverless. Observe actual sleep/wake behavior, cold-start retries, and Railway resource costs; local pool-drain tests cannot verify Railway sleep.
 
-The runtime container contains only the Rust binary and certificate roots. Railway infrastructure uses its TypeScript SDK as deployment tooling only. API requests time out after 30 seconds; shutdown drains for up to 35 seconds and closes the pool. Import processing and scheduled job recovery are not implemented in this foundation.
+The runtime container contains only the Rust binary and certificate roots. Railway infrastructure uses its TypeScript SDK as deployment tooling only. Account and recipe requests time out after 30 seconds; assistant requests have a 100-second provider timeout and 110-second handler timeout; shutdown drains for up to 35 seconds and closes the pool. Import processing and scheduled job recovery are not implemented in this foundation.
 
 ## Tests
 
@@ -76,7 +76,7 @@ python3 scripts/test-postgres.py
 
 The second command requires `cargo`, `initdb`, `postgres`, and `pg_isready` on PATH. It starts an isolated temporary database bound to loopback, runs the complete suite, then stops and deletes only that temporary instance. It never uses `DATABASE_URL`. The integration test requires the `test-fixtures` feature and is ignored by default. Never enable that feature in a production build or supply a real database as `TEST_DATABASE_URL`.
 
-Tests cover signed Apple tokens and invalid claims, nonce replay, concurrent refresh, expiry, session isolation, disabled assistant execution, public/private recipe access, immutable versions, foreign keys, repeated migrations and seeding, and pool draining.
+Tests cover signed Apple tokens and invalid claims, nonce replay, concurrent refresh, expiry, session isolation, assistant authentication and request limits, public/private recipe access, immutable versions, foreign keys, repeated migrations and seeding, and pool draining.
 
 The SQL baseline and migration checksum remain compatible with the initial Node prototype. Future schema changes need new migrations and a corresponding migration-runner entry.
 
@@ -84,7 +84,7 @@ The SQL baseline and migration checksum remain compatible with the initial Node 
 
 Railway project `mealos` (`3179ba45-5610-44e0-ae37-8ff2c41c6d05`), environment
 `production`, now contains the separate `forkware-api` service and `Postgres`.
-The legacy `mealos` assistant service is unchanged. Database credentials are
+The legacy `mealos` assistant service is retired. Database credentials are
 referenced privately as `${{Postgres.DATABASE_URL}}`; they are never copied into
 the app. `APPLE_CLIENT_ID` is `com.arjunakankipati.forkware`.
 
@@ -122,7 +122,7 @@ Public endpoint: `https://forkware.arjunakankipati.com/api`.
 Direct Railway endpoint: `https://forkware-api-production.up.railway.app/api`.
 Cloudflare CNAME `forkware` points to `fujcv393.up.railway.app`, with Railway's
 `_railway-verify.forkware` TXT ownership record. Railway issues the HTTPS
-certificate. Keep the existing `mealos` DNS record unchanged.
+certificate. The former `mealos` hostname is no longer used by the app.
 
 The catalog is not seeded automatically. Account deletion, Apple server-side
 revocation notifications, backup/restore verification, and full recipe sync
@@ -133,3 +133,15 @@ and `/api/ready` return 200, Apple challenge returns 201, and unauthenticated
 account access returns 401. The root returns 404. The live deployment manifest
 confirms automatic migrations, readiness checks, and Serverless enabled. Actual
 idle sleep/wake behavior and genuine Apple authorization still need device testing.
+
+## Claude assistant
+
+Set `ANTHROPIC_API_KEY` as a secret on **forkware-api**, using a service-account key scoped to the intended Claude workspace. Set `ASSISTANT_ALLOWED_USER_IDS` to comma-separated backend user UUIDs obtained from authenticated `GET /api/v1/me`. An empty key disables Claude; a key with an empty/invalid allowlist fails startup. Never use the old Claude Code subscription token, Firebase UID, or Apple subject here. Keep auto-reload disabled in Claude Console if usage must stop at the included credit balance.
+
+The authenticated endpoint accepts the existing `{model, messages}` contract and returns `{reply, questions, sources, recipeDocument, provider}`. `sonnet`, `opus`, and `haiku` select Claude 5.5 models; the old `claude-haiku-4-5` preference remains a compatible alias. Responses are unsaved drafts. Search is limited to three uses, output to 8,192 tokens, requests to 256 KB / 30 messages / 40,000 UTF-16 units per message. Sources come only from actual search results/citations. No shell, filesystem or Agent SDK is involved.
+
+A process-wide limit permits two active requests and 20 starts per minute. Keep one replica for this initial personal deployment; these are abuse controls, not a dollar budget. Anthropic enforces workspace/organization credit and spending limits. Logs contain input/output token counts only, never prompts, generated recipes, credentials, or upstream error bodies. Paid requests are never retried automatically.
+
+Errors return a stable `code`, friendly `error`, and `pccFallbackAllowed`. Exhausted credits map to 402; provider limits to 429; unavailable/misconfigured providers to 503; handler timeouts to 504. Authentication, authorization, malformed input, and explicit model refusal do not offer fallback. The iOS app offers PCC after eligible errors; it does not silently switch providers. PCC runs on the device through Apple's framework, requires iOS 27, Apple Intelligence availability, the approved entitlement and remaining Apple quota. It has no web search. Context is bounded independently and the local draft/history are retained.
+
+Deployment order: merge this PR through normal CI, configure the two Railway variables, then validate a signed iOS build with Apple sign-in and a real Claude request. Validate PCC on a supported physical device and test exhausted-credit/unavailable-provider behavior. The private legacy `mealos` service can be deleted after the new backend is healthy; no assistant data migration is required. Older app builds must be updated.
