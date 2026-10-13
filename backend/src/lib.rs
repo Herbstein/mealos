@@ -1,4 +1,5 @@
 pub mod apple;
+pub mod assistant;
 pub mod auth;
 pub mod db;
 pub mod http;

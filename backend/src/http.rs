@@ -1,4 +1,4 @@
-use crate::{Error, apple::AppleVerifier, auth, recipes};
+use crate::{Error, apple::AppleVerifier, assistant, auth, recipes};
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Request, State, rejection::JsonRejection},
@@ -21,11 +21,20 @@ use uuid::Uuid;
 pub struct AppState {
     pub pool: PgPool,
     pub apple: AppleVerifier,
+    pub assistant: Option<assistant::Assistant>,
     auth_requests: Mutex<VecDeque<Instant>>,
 }
 impl AppState {
     pub fn new(pool: PgPool, apple: AppleVerifier) -> Arc<Self> {
+        Self::with_assistant(pool, apple, None)
+    }
+    pub fn with_assistant(
+        pool: PgPool,
+        apple: AppleVerifier,
+        assistant: Option<assistant::Assistant>,
+    ) -> Arc<Self> {
         Arc::new(Self {
+            assistant,
             pool,
             apple,
             auth_requests: Mutex::new(VecDeque::new()),
@@ -45,14 +54,11 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/ready", get(ready))
         .route("/v1/me", get(me))
         .route("/v1/recipes/{id}", get(recipe))
-        .route(
-            "/v1/recipe-chat",
-            post(|| async {
-                Error(
-                    StatusCode::NOT_IMPLEMENTED,
-                    "Assistant integration has not been configured.",
-                )
-            }),
+        .merge(
+            Router::new()
+                .route("/v1/recipe-chat", post(chat))
+                .layer(DefaultBodyLimit::max(256_000))
+                .layer(middleware::from_fn(assistant_timeout)),
         )
         .fallback(|| async { Error(StatusCode::NOT_FOUND, "Not found.") })
         .layer(DefaultBodyLimit::max(24_000))
@@ -61,7 +67,15 @@ pub fn router(state: Arc<AppState>) -> Router {
     Router::new().nest("/api", api.clone()).merge(api)
 }
 async fn headers_and_timeout(request: Request, next: Next) -> Response {
-    let mut response = match tokio::time::timeout(Duration::from_secs(30), next.run(request)).await
+    let mut response = match tokio::time::timeout(
+        Duration::from_secs(if request.uri().path().ends_with("/v1/recipe-chat") {
+            115
+        } else {
+            30
+        }),
+        next.run(request),
+    )
+    .await
     {
         Ok(response) => response,
         Err(_) => Error(StatusCode::REQUEST_TIMEOUT, "Request timed out.").into_response(),
@@ -189,7 +203,7 @@ async fn logout(
 async fn me(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Result<Json<Value>, Error> {
     let identity = auth::authenticate(&state.pool, bearer(&headers)?).await?;
     Ok(Json(
-        json!({"user":{"id":identity.id},"assistantAllowed":false}),
+        json!({"user":{"id":identity.id},"assistantAllowed":state.assistant.as_ref().is_some_and(|a| a.allows(identity.id))}),
     ))
 }
 async fn recipe(
@@ -206,4 +220,41 @@ async fn recipe(
             .await?
             .ok_or(Error(StatusCode::NOT_FOUND, "Recipe not found."))?,
     ))
+}
+
+async fn assistant_timeout(request: Request, next: Next) -> Response {
+    match tokio::time::timeout(Duration::from_secs(110), next.run(request)).await {
+        Ok(response) => response,
+        Err(_) => assistant::Failure {
+            status: StatusCode::GATEWAY_TIMEOUT,
+            code: "provider_timeout",
+            message: "Claude timed out. You can try Apple Private Cloud Compute.",
+            fallback: true,
+        }
+        .into_response(),
+    }
+}
+async fn chat(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    input: Result<Json<assistant::Chat>, JsonRejection>,
+) -> Response {
+    let identity = match bearer(&headers) {
+        Ok(token) => match auth::authenticate(&state.pool, token).await {
+            Ok(identity) => identity,
+            Err(e) => return e.into_response(),
+        },
+        Err(e) => return e.into_response(),
+    };
+    let Some(assistant) = &state.assistant else {
+        return assistant::disabled().into_response();
+    };
+    let input = match body(input) {
+        Ok(input) => input,
+        Err(e) => return e.into_response(),
+    };
+    match assistant.chat(identity.id, input).await {
+        Ok(value) => Json(value).into_response(),
+        Err(e) => e.into_response(),
+    }
 }

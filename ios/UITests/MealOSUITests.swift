@@ -21,6 +21,21 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(button.existsOrWait(timeout: 15), "Missing button: \(label)\n\(app.debugDescription)")
         button.tap()
     }
+    func testAssistantRequiresAppleAndKeepsFailedMessage() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        tap("Assistant")
+        let composer = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
+        XCTAssertTrue(composer.existsOrWait(timeout: 10))
+        composer.tap(); composer.typeText("Make chicken and rice")
+        tap("Send")
+        let status = app.staticTexts["assistant-status"]
+        XCTAssertTrue(status.existsOrWait(timeout: 10))
+        XCTAssertTrue(status.label.contains("Sign in with Apple"))
+        XCTAssertTrue(app.staticTexts["Make chicken and rice"].exists)
+        XCTAssertFalse(app.buttons["assistant-pcc-fallback"].exists)
+        capture("assistant-apple-sign-in-required")
+    }
     func testAppleAccountSettings() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()

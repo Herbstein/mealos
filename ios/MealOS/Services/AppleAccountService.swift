@@ -99,6 +99,13 @@ import SwiftUI
             self.error = error.localizedDescription
         }
     }
+    func recipeChat(_ data: Data) async throws -> Data {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--uitesting") { throw BackendFailure(status: 401, message: "Sign in with Apple in Settings to use Claude.") }
+        #endif
+        guard let client else { throw MealOSError("The Forkware backend is not configured.") }
+        return try await client.recipeChat(data)
+    }
     func signOut() async {
         guard !busy, let client else { return }
         busy = true; defer { finishOperation() }

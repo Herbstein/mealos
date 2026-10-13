@@ -31,6 +31,50 @@ final class BackendClientTests: XCTestCase {
         {"user":{"id":"user-1"},"tokenType":"Bearer","accessToken":"new-access","refreshToken":"new-refresh","accessExpiresAt":"2099-10-13T12:00:00.123456Z","sessionExpiresAt":"2099-11-13T12:00:00Z"}
         """.utf8)
     }
+    func testAssistantUsesBackendSessionAndDoesNotRetryCredits() async throws {
+        let stub = BackendStub([(402, Data(#"{"error":"Claude credits are exhausted.","pccFallbackAllowed":true}"#.utf8))])
+        let storage = MemorySession(session())
+        let client = BackendClient(baseURL: base, storage: storage, transport: { try await stub.send($0) })
+        let body = Data(#"{"model":"sonnet","messages":[{"role":"user","content":"Rice"}]}"#.utf8)
+        do { _ = try await client.recipeChat(body); XCTFail("Expected credit error") }
+        catch let failure as BackendFailure { XCTAssertEqual(failure.status, 402); XCTAssertTrue(failure.pccFallbackAllowed) }
+        let requests = await stub.requests
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertEqual(requests[0].url?.path, "/api/v1/recipe-chat")
+        XCTAssertEqual(requests[0].httpBody, body)
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer old-access")
+        XCTAssertNotNil(try storage.load())
+    }
+    func testAssistantAuthenticationCannotOfferFallback() async throws {
+        for status in [401, 403] {
+            let stub = BackendStub([(status, Data(#"{"error":"Denied","pccFallbackAllowed":true}"#.utf8))])
+            let storage = MemorySession(session())
+            let client = BackendClient(baseURL: base, storage: storage, transport: { try await stub.send($0) })
+            do { _ = try await client.recipeChat(Data()); XCTFail("Expected denial") }
+            catch let failure as BackendFailure { XCTAssertFalse(failure.pccFallbackAllowed) }
+            XCTAssertEqual(try storage.load() == nil, status == 401)
+        }
+    }
+    func testPCCContextKeepsLatestAndBoundsHistory() throws {
+        var history = AssistantHistory()
+        history.messages = (0..<30).map { AssistantMessage(role: $0 % 2 == 0 ? "assistant" : "user", content: String(repeating: "古", count: 1000) + "\($0)") }
+        let prompt = try AssistantContext.pccPrompt(history)
+        XCTAssertLessThanOrEqual(prompt.utf8.count, 16_000)
+        XCTAssertTrue(prompt.hasSuffix("29"))
+        history.messages = [AssistantMessage(role: "user", content: String(repeating: "x", count: 16_001))]
+        XCTAssertThrowsError(try AssistantContext.pccPrompt(history))
+    }
+    func testProviderSwitchIncludesDraftWithoutMutatingHistory() throws {
+        var history = AssistantHistory()
+        var recipe = Recipe(); recipe.name = "Chicken rice"; recipe.shortName = "Chicken rice"
+        history.draft = recipe
+        history.messages = [AssistantMessage(role: "user", content: "Use less salt")]
+        let context = try AssistantContext.messages(history)
+        XCTAssertTrue(context[0].content.contains("Chicken rice"))
+        XCTAssertTrue(context[0].content.hasSuffix("Use less salt"))
+        XCTAssertEqual(history.messages[0].content, "Use less salt")
+        XCTAssertTrue(try AssistantContext.pccPrompt(history).contains("mealos.recipe"))
+    }
     func testURLRejectsCredentialsAndNonHTTPS() {
         XCTAssertEqual(BackendClient.configuredURL(base.absoluteString), base)
         for url in ["", "$(FORKWARE_BACKEND_URL)", "http://localhost/api", "https://user:pass@example.com/api", "https://example.com/api?token=secret", "https://example.com/#fragment"] {

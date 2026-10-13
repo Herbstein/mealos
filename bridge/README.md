@@ -1,4 +1,4 @@
-> Legacy assistant service used by the current iOS client. New recipe and Apple authentication development lives in [the Rust backend](../backend/README.md).
+> **Deprecated:** New iOS builds use the Rust backend with Claude API credentials and device-side PCC fallback. Do not deploy this bridge for new clients. Retained only for older app versions; keep the existing service running until those clients migrate. See [migration and retirement instructions](../backend/README.md#claude-assistant).
 
 # MealOS recipe bridge
 

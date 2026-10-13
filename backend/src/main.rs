@@ -1,4 +1,4 @@
-use forkware_backend::{apple::AppleVerifier, db, http, recipes};
+use forkware_backend::{apple::AppleVerifier, assistant::Assistant, db, http, recipes};
 use std::{env, time::Duration};
 
 #[tokio::main]
@@ -26,7 +26,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if audience.trim().is_empty() {
                 return Err("APPLE_CLIENT_ID is required".into());
             }
-            let state = http::AppState::new(pool.clone(), AppleVerifier::new(audience)?);
+            let state = http::AppState::with_assistant(
+                pool.clone(),
+                AppleVerifier::new(audience)?,
+                Assistant::from_env()?,
+            );
             let port: u16 = env::var("PORT").unwrap_or_else(|_| "3000".into()).parse()?;
             let listener =
                 tokio::net::TcpListener::bind((std::net::Ipv4Addr::UNSPECIFIED, port)).await?;

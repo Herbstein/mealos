@@ -52,8 +52,6 @@
 	<true/>
 	<key>ForkwareBackendURL</key>
 	<string>$(FORKWARE_BACKEND_URL)</string>
-	<key>MealOSBridgeURL</key>
-	<string>$(MEALOS_BRIDGE_URL)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan printed recipes to read their text on this device.</string>
 	<key>UIAppFonts</key>

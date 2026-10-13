@@ -10,7 +10,7 @@ The first backend foundation is implemented in `backend/` using Rust, Axum, Toki
 
 ## Hosting and identity
 
-- One Rust API will handle recipe access, imports, publishing, and synchronization. Fold assistant integration into this service after choosing PCC or another cloud processing option; assistant execution is disabled in the initial foundation.
+- One Rust API will handle recipe access, imports, publishing, and synchronization. Claude assistant execution now uses this service with a workspace-scoped API key; supported Apple devices offer PCC fallback. The legacy bridge is deprecated.
 - Enable Railway Serverless on the API and redeploy for the setting to take effect.
 - One Postgres service holds shared recipes and access-controlled personal data. Only the backend connects to it; database credentials never ship in the app.
 - Use a small object-storage bucket for photos and temporary attachments.

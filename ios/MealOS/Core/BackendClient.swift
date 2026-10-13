@@ -22,6 +22,8 @@ struct BackendProfile: Decodable { let user: BackendUser; let assistantAllowed: 
 struct BackendFailure: LocalizedError {
     let status: Int
     let message: String
+    let pccFallbackAllowed: Bool
+    init(status: Int, message: String, pccFallbackAllowed: Bool = false) { self.status = status; self.message = message; self.pccFallbackAllowed = pccFallbackAllowed }
     var errorDescription: String? { message }
 }
 protocol BackendSessionStorage: Sendable {
@@ -160,6 +162,26 @@ actor BackendClient {
             if epoch == generation { try clear() }
             throw error
         }
+    }
+    func recipeChat(_ data: Data) async throws -> Data {
+        let epoch = generation
+        let token = try await accessToken()
+        var request = URLRequest(url: baseURL.appendingPathComponent("v1/recipe-chat"), timeoutInterval: 120)
+        request.httpMethod = "POST"
+        request.httpBody = data
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        // Never automatically replay a potentially billed request.
+        let (responseData, response) = try await transport(request)
+        guard generation == epoch else { throw CancellationError() }
+        guard (200..<300).contains(response.statusCode) else {
+            if response.statusCode == 401 { try clear() }
+            let failure = try? JSONSerialization.jsonObject(with: responseData) as? [String: Any]
+            let status = response.statusCode
+            let fallback = ![401, 403].contains(status) && (failure?["pccFallbackAllowed"] as? Bool == true || [502, 503, 504].contains(status))
+            throw BackendFailure(status: status, message: failure?["error"] as? String ?? "Recipe Assistant is unavailable (\(status)). Please try again.", pccFallbackAllowed: fallback)
+        }
+        return responseData
     }
     private func clear() throws {
         generation = UUID(); refreshTask?.task.cancel(); refreshTask = nil

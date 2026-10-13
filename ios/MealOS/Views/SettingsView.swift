@@ -21,7 +21,7 @@ struct SettingsView: View {
                 } else {
                     Text("Account sign-in is unavailable in this build.").foregroundStyle(.secondary)
                 }
-                Text("Apple sign-in connects you to the new recipe service. Library sync and Recipe Assistant still use your Google account during this transition.").font(.footnote).foregroundStyle(.secondary)
+                Text("Apple sign-in connects you to Recipe Assistant and the new recipe service. Your existing library continues to sync through Google.").font(.footnote).foregroundStyle(.secondary)
             }
             Section("Your library · Google sync") {
                 Label(cloud.status, systemImage: cloud.account == nil ? "iphone" : "icloud")
@@ -53,7 +53,7 @@ struct SettingsView: View {
             }
             Section("Forkware") {
                 Text("Plan simply. Shop once. Cook confidently.").font(MealTheme.display(30))
-                Text("Recipes, planning, shopping, and cooking work offline. Recipe Assistant needs an internet connection and an authorized Google account.").font(.footnote).foregroundStyle(.secondary)
+                Text("Recipes, planning, shopping, and cooking work offline. Claude needs an internet connection and an authorized Apple account. Apple Private Cloud Compute is offered as a fallback on supported devices.").font(.footnote).foregroundStyle(.secondary)
                 Text("Barlow Condensed is licensed under the SIL Open Font License. The full license is included in the app bundle.").font(.footnote).foregroundStyle(.secondary)
             }
         }.navigationTitle("Settings").scrollContentBackground(.hidden).background(MealTheme.background)
