@@ -208,7 +208,7 @@ Historical simulator validation used Xcode 26.6 and iOS 26.5; current assistant 
 
 ## Assistant providers
 
-Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment target through the Rust backend; PCC fallback is available only on supported iOS 27+ devices. `ForkwareBackendURL` configures account and assistant requests. The old `MealOSBridgeURL` is no longer read. Sign in with Apple in Settings for Claude access; Google authentication remains solely for library sync.
+Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment target through the Rust backend; PCC fallback is available only on supported iOS 27+ devices. `ForkwareBackendURL` configures account and assistant requests. Sign in with Apple in Settings for Claude access; Google authentication remains solely for library sync.
 
 The target includes `com.apple.developer.private-cloud-compute`. Enable the approved PCC entitlement for the app identifier and regenerate signing profiles before device/TestFlight distribution. Simulator builds verify compilation but cannot establish that the entitlement, Apple quota, and cloud inference work on a real device.
 

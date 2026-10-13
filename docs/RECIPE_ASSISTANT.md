@@ -6,4 +6,4 @@ Claude uses the Messages API with bounded web search and returns a recipe draft 
 
 Firebase library synchronization remains independent of assistant access. Sign in with Apple to use Claude; Google sign-in is only for the legacy library.
 
-The old Node/Claude Agent SDK service in `bridge/` is deprecated. Its setup is preserved in [bridge/README.md](../bridge/README.md) solely for older clients. Do not move its subscription credential into the Rust service. Keep it deployed until old clients migrate, then separately retire the service and revoke the credential.
+The old Node/Claude Agent SDK bridge has been removed. The private legacy Railway service is retired without data migration; update older clients to the current iOS build.

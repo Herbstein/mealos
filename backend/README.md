@@ -1,6 +1,6 @@
 # Forkware backend
 
-The Rust backend uses Axum, Tokio, SQLx/Postgres, native Sign in with Apple, and the Claude Messages API. The iOS assistant authenticates with its existing backend session; Firebase remains only for legacy library sync. Claude credentials are server-only. Apple Private Cloud Compute is an explicit device-side fallback. The deprecated `../bridge/` is retained for older app builds during migration.
+The Rust backend uses Axum, Tokio, SQLx/Postgres, native Sign in with Apple, and the Claude Messages API. The iOS assistant authenticates with its existing backend session; Firebase remains only for legacy library sync. Claude credentials are server-only. Apple Private Cloud Compute is an explicit device-side fallback. The legacy Node assistant bridge has been removed.
 
 ## Local development
 
@@ -56,7 +56,7 @@ Authentication POST bodies must be JSON objects. Auth endpoints accept at most 2
 
 For a new staging environment, run `npm ci` for the deployment-only Railway SDK, link the intended Railway project/environment, then run `railway config plan` from this directory. Review the project/resource names before applying. Connect the API's source repository with root `/backend`. This definition is for a new environment, not the existing production services listed below.
 
-For the existing production project, run `railway config pull` into a separate review location first and merge the backend settings with its actual service names, variables, and other resources. Keep the existing assistant service separate, preserving its secrets, domain, and Firebase settings. Do not blindly apply this bootstrap definition over an existing environment. The named partial limits ownership to these resources, but existing projects must use a compatible partial setup.
+For the existing production project, run `railway config pull` into a separate review location first and merge the backend settings with its actual service names, variables, and other resources. Do not blindly apply this bootstrap definition over an existing environment. The named partial limits ownership to these resources, but existing projects must use a compatible partial setup.
 
 Before routing traffic:
 
@@ -84,7 +84,7 @@ The SQL baseline and migration checksum remain compatible with the initial Node 
 
 Railway project `mealos` (`3179ba45-5610-44e0-ae37-8ff2c41c6d05`), environment
 `production`, now contains the separate `forkware-api` service and `Postgres`.
-The legacy `mealos` assistant service is unchanged. Database credentials are
+The legacy `mealos` assistant service is retired. Database credentials are
 referenced privately as `${{Postgres.DATABASE_URL}}`; they are never copied into
 the app. `APPLE_CLIENT_ID` is `com.arjunakankipati.forkware`.
 
@@ -122,7 +122,7 @@ Public endpoint: `https://forkware.arjunakankipati.com/api`.
 Direct Railway endpoint: `https://forkware-api-production.up.railway.app/api`.
 Cloudflare CNAME `forkware` points to `fujcv393.up.railway.app`, with Railway's
 `_railway-verify.forkware` TXT ownership record. Railway issues the HTTPS
-certificate. Keep the existing `mealos` DNS record unchanged.
+certificate. The former `mealos` hostname is no longer used by the app.
 
 The catalog is not seeded automatically. Account deletion, Apple server-side
 revocation notifications, backup/restore verification, and full recipe sync
@@ -144,4 +144,4 @@ A process-wide limit permits two active requests and 20 starts per minute. Keep 
 
 Errors return a stable `code`, friendly `error`, and `pccFallbackAllowed`. Exhausted credits map to 402; provider limits to 429; unavailable/misconfigured providers to 503; handler timeouts to 504. Authentication, authorization, malformed input, and explicit model refusal do not offer fallback. The iOS app offers PCC after eligible errors; it does not silently switch providers. PCC runs on the device through Apple's framework, requires iOS 27, Apple Intelligence availability, the approved entitlement and remaining Apple quota. It has no web search. Context is bounded independently and the local draft/history are retained.
 
-Deployment order: merge this PR through normal CI, configure the two Railway variables, then validate a signed iOS build with Apple sign-in and a real Claude request. Validate PCC on a supported physical device and test exhausted-credit/unavailable-provider behavior. Old clients still depend on the legacy `mealos` service: keep it running until they have migrated. Only then separately remove that service and revoke its OAuth credential; this change does neither.
+Deployment order: merge this PR through normal CI, configure the two Railway variables, then validate a signed iOS build with Apple sign-in and a real Claude request. Validate PCC on a supported physical device and test exhausted-credit/unavailable-provider behavior. The private legacy `mealos` service can be deleted after the new backend is healthy; no assistant data migration is required. Older app builds must be updated.
