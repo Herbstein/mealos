@@ -17,7 +17,9 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, migrate::MigrationType};
 use uuid::Uuid;
 
-use crate::{Error, apple::AppleVerifier, assistant, auth, db, library_sync, recipes};
+use crate::{
+    Error, apple::AppleVerifier, assistant, assistant::Failure, auth, db, library_sync, recipes,
+};
 
 pub struct AppState {
     pub pool: PgPool,
@@ -147,22 +149,15 @@ async fn auth_limit(State(state): State<Arc<AppState>>, request: Request, next: 
     next.run(request).await
 }
 
-fn body<T>(value: Result<Json<T>, JsonRejection>) -> Result<T, Error> {
-    value.map(|Json(v)| v).map_err(|e| {
-        if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
-            Error(StatusCode::PAYLOAD_TOO_LARGE, "Request is too large.")
-        } else {
-            Error::bad_request()
-        }
-    })
-}
 fn object(value: Result<Json<Value>, JsonRejection>) -> Result<(), Error> {
-    if body(value)?.is_object() {
+    let Json(value) = value?;
+    if value.is_object() {
         Ok(())
     } else {
         Err(Error::bad_request())
     }
 }
+
 fn bearer(headers: &HeaderMap) -> Result<&str, Error> {
     headers
         .get("authorization")
@@ -212,11 +207,12 @@ struct SignIn {
     challenge_id: Uuid,
     identity_token: String,
 }
+
 async fn sign_in(
     State(state): State<Arc<AppState>>,
     input: Result<Json<SignIn>, JsonRejection>,
 ) -> Result<Json<auth::Tokens>, Error> {
-    let input = body(input)?;
+    let Json(input) = input?;
     if input.identity_token.is_empty() || input.identity_token.len() > 16_384 {
         return Err(Error::bad_request());
     }
@@ -226,19 +222,23 @@ async fn sign_in(
         auth::finish_sign_in(&state.pool, input.challenge_id, &subject).await?,
     ))
 }
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Refresh {
     refresh_token: String,
 }
+
 async fn refresh(
     State(state): State<Arc<AppState>>,
     input: Result<Json<Refresh>, JsonRejection>,
 ) -> Result<Json<auth::Tokens>, Error> {
+    let Json(input) = input?;
     Ok(Json(
-        auth::refresh(&state.pool, &body(input)?.refresh_token).await?,
+        auth::refresh(&state.pool, &input.refresh_token).await?,
     ))
 }
+
 async fn logout(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -272,40 +272,37 @@ async fn recipe(
 }
 
 async fn assistant_timeout(request: Request, next: Next) -> Response {
-    match tokio::time::timeout(Duration::from_secs(110), next.run(request)).await {
-        Ok(response) => response,
-        Err(_) => assistant::Failure {
-            status: StatusCode::GATEWAY_TIMEOUT,
-            code: "provider_timeout",
-            message: "Claude timed out. You can try Apple Private Cloud Compute.",
-            fallback: true,
-        }
-        .into_response(),
-    }
+    tokio::time::timeout(Duration::from_secs(110), next.run(request))
+        .await
+        .unwrap_or_else(|_| {
+            Failure {
+                status: StatusCode::GATEWAY_TIMEOUT,
+                code: "provider_timeout",
+                message: "Claude timed out. You can try Apple Private Cloud Compute.",
+                fallback: true,
+            }
+            .into_response()
+        })
 }
 async fn chat(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
     input: Result<Json<assistant::Chat>, JsonRejection>,
-) -> Response {
-    let identity = match bearer(&headers) {
-        Ok(token) => match auth::authenticate(&state.pool, token).await {
-            Ok(identity) => identity,
-            Err(e) => return e.into_response(),
-        },
-        Err(e) => return e.into_response(),
-    };
+) -> Result<Response, Error> {
+    let token = bearer(&headers)?;
+    let identity = auth::authenticate(&state.pool, token).await?;
+
     let Some(assistant) = &state.assistant else {
-        return assistant::disabled().into_response();
+        return Ok(assistant::disabled().into_response());
     };
-    let input = match body(input) {
-        Ok(input) => input,
-        Err(e) => return e.into_response(),
+
+    let Json(input) = input?;
+    let value = match assistant.chat(identity.id, input).await {
+        Ok(value) => value,
+        Err(failure) => return Ok(failure.into_response()),
     };
-    match assistant.chat(identity.id, input).await {
-        Ok(value) => Json(value).into_response(),
-        Err(e) => e.into_response(),
-    }
+
+    Ok(Json(value).into_response())
 }
 
 async fn library_read(
