@@ -1,4 +1,9 @@
-use crate::{Error, apple::AppleVerifier, assistant, auth, library_sync, recipes};
+use std::{
+    collections::VecDeque,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Request, State, rejection::JsonRejection},
@@ -10,13 +15,10 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::PgPool;
-use std::{
-    collections::VecDeque,
-    sync::Arc,
-    time::{Duration, Instant},
-};
 use tokio::sync::Mutex;
 use uuid::Uuid;
+
+use crate::{Error, apple::AppleVerifier, assistant, auth, library_sync, recipes};
 
 pub struct AppState {
     pub pool: PgPool,
@@ -43,33 +45,42 @@ impl AppState {
 }
 pub fn router(state: Arc<AppState>) -> Router {
     let auth_routes = Router::new()
-        .route("/v1/auth/apple/challenge", post(challenge))
-        .route("/v1/auth/apple", post(sign_in))
-        .route("/v1/auth/refresh", post(refresh))
-        .route("/v1/auth/logout", post(logout))
+        .route("/apple/challenge", post(challenge))
+        .route("/apple", post(sign_in))
+        .route("/refresh", post(refresh))
+        .route("/logout", post(logout))
         .route_layer(middleware::from_fn_with_state(state.clone(), auth_limit));
-    let api = Router::new()
-        .merge(auth_routes)
+
+    let health_routes = Router::new()
         .route("/health", get(|| async { Json(json!({"ok":true})) }))
         .route("/ready", get(ready))
-        .route("/v1/me", get(me))
-        .route("/v1/recipes/{id}", get(recipe))
-        .merge(
-            Router::new()
-                .route("/v1/library", get(library_read).post(library_write))
-                .layer(DefaultBodyLimit::max(2_000_000)),
-        )
-        .merge(
-            Router::new()
-                .route("/v1/recipe-chat", post(chat))
-                .layer(DefaultBodyLimit::max(256_000))
-                .layer(middleware::from_fn(assistant_timeout)),
-        )
-        .fallback(|| async { Error(StatusCode::NOT_FOUND, "Not found.") })
+        .with_state(state.clone());
+
+    let library_routes = Router::new()
+        .route("/library", get(library_read).post(library_write))
+        .layer(DefaultBodyLimit::max(2_000_000));
+
+    let recipe_chat_route = Router::new()
+        .route("/recipe-chat", post(chat))
+        .layer(DefaultBodyLimit::max(256_000))
+        .layer(middleware::from_fn(assistant_timeout));
+
+    let v1api_routes = Router::new()
+        .nest("/auth", auth_routes)
+        .route("/me", get(me))
+        .route("/recipes/{id}", get(recipe))
+        .merge(library_routes)
+        .merge(recipe_chat_route)
         .layer(DefaultBodyLimit::max(24_000))
         .layer(middleware::from_fn(headers_and_timeout))
         .with_state(state);
-    Router::new().nest("/api", api.clone()).merge(api)
+
+    let api = Router::new().nest("/v1", v1api_routes);
+
+    Router::new()
+        .nest("/api", api)
+        .merge(health_routes)
+        .fallback(|| async { Error(StatusCode::NOT_FOUND, "Not found.") })
 }
 async fn headers_and_timeout(request: Request, next: Next) -> Response {
     let mut response = match tokio::time::timeout(
