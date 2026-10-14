@@ -7,7 +7,7 @@ use std::{
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Request, State, rejection::JsonRejection},
-    http::{HeaderMap, HeaderValue, StatusCode},
+    http::{HeaderMap, HeaderName, HeaderValue, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -82,8 +82,9 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(health_routes)
         .fallback(|| async { Error(StatusCode::NOT_FOUND, "Not found.") })
 }
+
 async fn headers_and_timeout(request: Request, next: Next) -> Response {
-    let mut response = match tokio::time::timeout(
+    let mut response = tokio::time::timeout(
         Duration::from_secs(if request.uri().path().ends_with("/v1/recipe-chat") {
             115
         } else {
@@ -92,19 +93,22 @@ async fn headers_and_timeout(request: Request, next: Next) -> Response {
         next.run(request),
     )
     .await
-    {
-        Ok(response) => response,
-        Err(_) => Error(StatusCode::REQUEST_TIMEOUT, "Request timed out.").into_response(),
-    };
-    response
-        .headers_mut()
-        .insert("cache-control", HeaderValue::from_static("no-store"));
-    response.headers_mut().insert(
-        "x-content-type-options",
-        HeaderValue::from_static("nosniff"),
-    );
+    .unwrap_or_else(|_| Error(StatusCode::REQUEST_TIMEOUT, "Request timed out.").into_response());
+
+    response.headers_mut().extend([
+        (
+            HeaderName::from_static("cache-control"),
+            HeaderValue::from_static("no-store"),
+        ),
+        (
+            HeaderName::from_static("x-content-type-options"),
+            HeaderValue::from_static("nosniff"),
+        ),
+    ]);
+
     response
 }
+
 async fn auth_limit(State(state): State<Arc<AppState>>, request: Request, next: Next) -> Response {
     let now = Instant::now();
     let mut times = state.auth_requests.lock().await;
@@ -170,8 +174,8 @@ WHERE description = ANY($2)
         migrations.len() as i64,
         &migrations
     )
-    .fetch_one(&state.pool)
-    .await?;
+        .fetch_one(&state.pool)
+        .await?;
     if !present {
         return Err(Error::unavailable());
     }
