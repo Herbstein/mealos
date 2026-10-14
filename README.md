@@ -21,3 +21,7 @@ The Apple client uses the Rust backend for Apple sign-in and Claude assistant re
 See [Firebase sync](docs/FIREBASE_SYNC.md), [Recipe Assistant setup](docs/RECIPE_ASSISTANT.md), [product decisions](PRODUCT.md), and the [visual system](DESIGN.md). Android-specific instructions in these documents are historical reference.
 
 The [Rust backend](backend/README.md) contains the new Postgres and Apple authentication foundation. The [backend and recipe data plan](docs/BACKEND_PLAN.md) describes the planned migration to a Railway Serverless API and Postgres, including importing, versioning, sharing, offline sync, and estimated hosting costs.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
