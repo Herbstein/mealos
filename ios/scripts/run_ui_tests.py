@@ -22,7 +22,7 @@ failed = False
 for kind, device in [('iphone', choose('iPhone', args.iphone)), ('ipad', choose('iPad', args.ipad))]:
     result = args.output / (kind + '.xcresult')
     log = args.output / (kind + '.log')
-    command = ['xcodebuild', '-project', str(root/'Forkware.xcodeproj'), '-scheme', 'Forkware', '-configuration', 'Debug', '-destination', 'platform=iOS Simulator,id=' + device['udid'], '-derivedDataPath', '/tmp/MealOSDerivedData', '-resultBundlePath', str(result), '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=NO', 'test']
+    command = ['xcodebuild', '-project', str(root/'Forkware.xcodeproj'), '-scheme', 'Forkware', '-configuration', 'Debug', '-destination', 'platform=iOS Simulator,id=' + device['udid'], '-derivedDataPath', str(args.output / 'DerivedData'), '-resultBundlePath', str(result), '-parallel-testing-enabled', 'NO', 'CODE_SIGNING_ALLOWED=NO', 'test']
     print(f'Testing {device["name"]}; log: {log}', flush=True)
     with log.open('w') as output:
         run = subprocess.run(command, env=env, stdout=output, stderr=subprocess.STDOUT)

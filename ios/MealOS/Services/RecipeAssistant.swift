@@ -2,7 +2,9 @@ import Foundation
 import FoundationModels
 
 @MainActor enum RecipeAssistant {
+    static var pccEnabled: Bool { Bundle.main.object(forInfoDictionaryKey: "ForkwarePCCEnabled") as? String == "YES" }
     static var pccUnavailableReason: String? {
+        guard pccEnabled else { return "Apple Private Cloud Compute is disabled pending Apple approval." }
         guard #available(iOS 27.0, *) else { return "Apple Private Cloud Compute requires iOS 27 or later." }
         let model = PrivateCloudComputeLanguageModel()
         guard model.isAvailable else { return "Apple Private Cloud Compute is unavailable on this device. Check Apple Intelligence settings and your connection." }
@@ -38,7 +40,7 @@ import FoundationModels
             return
         } catch {
             let eligible = (error as? BackendFailure)?.pccFallbackAllowed == true || (error as? URLError).map { [.timedOut, .cannotConnectToHost, .cannotFindHost, .networkConnectionLost, .badServerResponse].contains($0.code) } == true
-            store.canTryPCC = !usePCC && eligible
+            store.canTryPCC = pccEnabled && !usePCC && eligible
             store.assistantNotice = error.localizedDescription
             if usePCC, let reason = pccUnavailableReason { store.assistantNotice = reason }
         }
