@@ -235,3 +235,9 @@ Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment ta
 The target includes `com.apple.developer.private-cloud-compute`. Enable the approved PCC entitlement for the app identifier and regenerate signing profiles before device/TestFlight distribution. Simulator builds verify compilation but cannot establish that the entitlement, Apple quota, and cloud inference work on a real device.
 
 Claude failures leave the conversation and current draft intact. Credit exhaustion, capacity limits, provider failures, and eligible transport failures offer a clearly labeled PCC button; account denial, invalid requests and explicit refusals do not. PCC sends a conservative 16 KB UTF-8 suffix of the conversation with the current draft, reserving context for instructions/reasoning/output. An oversized latest request is rejected rather than silently truncated. It never presents generated URLs as searched sources. If PCC is unavailable or out of quota, a persistent status explains why.
+
+### PCC approval pending
+
+Default builds are Claude-only: `FORKWARE_PCC_ENABLED = NO` in `Config.xcconfig`. This selects the entitlement file without PCC and disables the fallback before creating an Apple model. The PCC implementation and `MealOS-PCC.entitlements` remain ready. After Apple enables PCC for the app identifier and signing profiles, set `FORKWARE_PCC_ENABLED = YES` to enable both signing and runtime support together. Verify the resulting archive entitlements before distribution.
+
+Distribute all device builds through TestFlight. Do not install or launch directly on a physical device.
