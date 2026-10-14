@@ -11,7 +11,7 @@ test-fixtures = []
 axum = "0.8"
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde"] }
-jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+jsonwebtoken = { version = "11.1.0", features = ["aws_lc_rs"] }
 rand = "0.10.3"
 reqwest = { version = "0.13.5", default-features = false, features = ["json", "default-tls"] }
 serde = { version = "1", features = ["derive"] }
