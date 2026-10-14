@@ -21,6 +21,33 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(button.existsOrWait(timeout: 15), "Missing button: \(label)\n\(app.debugDescription)")
         button.tap()
     }
+    func testAssistantKeyboardLayoutAndDismissal() throws {
+        launch(arguments: ["-assistant-composer", ""])
+        tap("Assistant")
+        let editor = app.textViews["assistant-composer"]
+        XCTAssertTrue(editor.existsOrWait(timeout: 10))
+        let navigation = app.navigationBars["Recipe Assistant"]
+        let initialTop = navigation.frame.minY
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.existsOrWait(timeout: 5))
+        let text = String(repeating: "A warming lentil soup with carrots and spices.\n", count: 12)
+        editor.typeText(text)
+        let hide = app.buttons["assistant-hide-keyboard"]
+        XCTAssertTrue(hide.isHittable)
+        XCTAssertEqual(navigation.frame.minY, initialTop, accuracy: 2)
+        XCTAssertLessThanOrEqual(editor.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        XCTAssertGreaterThan(app.scrollViews["assistant-conversation"].frame.height, 80)
+        capture("assistant-keyboard-long-draft")
+        hide.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String, text)
+        capture("assistant-keyboard-dismissed")
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.existsOrWait(timeout: 5))
+        app.scrollViews["assistant-conversation"].swipeDown()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
     func testHomeOverviewAndNavigation() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()
