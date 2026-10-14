@@ -205,18 +205,36 @@ RETURNING user_id, access_expires_at, expires_at
         session_expires_at: row.expires_at,
     })
 }
+
 pub async fn authenticate(pool: &PgPool, access_token: &str) -> Result<Identity, Error> {
     if !valid_token(access_token, "fwat_") {
         return Err(Error::unauthorized());
     }
-    sqlx::query_as("SELECT user_id AS id,id AS session_id FROM sessions WHERE access_hash=$1 AND revoked_at IS NULL AND access_expires_at>now() AND expires_at>now()")
-        .bind(digest(access_token)).fetch_optional(pool).await?.ok_or_else(Error::unauthorized)
+
+    sqlx::query_as!(
+        Identity,
+        r#"
+SELECT user_id AS id, id AS session_id
+FROM sessions
+WHERE access_hash=$1
+  AND revoked_at IS NULL
+  AND access_expires_at > now()
+  AND expires_at > now()"#,
+        digest(access_token)
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(Error::unauthorized)
 }
+
 pub async fn logout(pool: &PgPool, identity: Identity) -> Result<(), Error> {
-    sqlx::query("UPDATE sessions SET revoked_at=now() WHERE id=$1 AND user_id=$2")
-        .bind(identity.session_id)
-        .bind(identity.id)
-        .execute(pool)
-        .await?;
+    sqlx::query!(
+        "UPDATE sessions SET revoked_at=now() WHERE id=$1 AND user_id=$2",
+        identity.session_id,
+        identity.id
+    )
+    .execute(pool)
+    .await?;
+
     Ok(())
 }
