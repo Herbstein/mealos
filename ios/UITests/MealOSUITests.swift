@@ -69,6 +69,10 @@ final class MealOSUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()
         tap("Assistant")
+        // Reset the persisted composer through the same flow as a user.
+        tap("Assistant options")
+        tap("New conversation")
+        tap("Clear conversation")
         let composer = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
         XCTAssertTrue(composer.existsOrWait(timeout: 10))
         composer.tap(); composer.typeText("Make chicken and rice")
