@@ -24,7 +24,7 @@ final class MealOSUITests: XCTestCase {
     func testAssistantKeyboardLayoutAndDismissal() throws {
         launch(arguments: ["-assistant-composer", ""])
         tap("Assistant")
-        let editor = app.textViews["assistant-composer-field"]
+        let editor = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
         XCTAssertTrue(editor.existsOrWait(timeout: 10))
         let navigation = app.navigationBars["Recipe Assistant"]
         let initialTop = navigation.frame.minY
