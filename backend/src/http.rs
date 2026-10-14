@@ -1,6 +1,6 @@
 use std::{
     collections::VecDeque,
-    sync::Arc,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
@@ -15,7 +15,6 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::{PgPool, migrate::MigrationType};
-use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{Error, apple::AppleVerifier, assistant, auth, db, library_sync, recipes};
@@ -111,14 +110,29 @@ async fn headers_and_timeout(request: Request, next: Next) -> Response {
 
 async fn auth_limit(State(state): State<Arc<AppState>>, request: Request, next: Next) -> Response {
     let now = Instant::now();
-    let mut times = state.auth_requests.lock().await;
-    while times
-        .front()
-        .is_some_and(|t| now.duration_since(*t) >= Duration::from_secs(60))
-    {
-        times.pop_front();
-    }
-    if times.len() >= 60 {
+
+    let is_rate_limited = {
+        let mut times = state
+            .auth_requests
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
+        while times
+            .front()
+            .is_some_and(|t| now.duration_since(*t) >= Duration::from_secs(60))
+        {
+            times.pop_front();
+        }
+
+        if times.len() >= 60 {
+            true
+        } else {
+            times.push_back(now);
+            false
+        }
+    };
+
+    if is_rate_limited {
         let mut response = Error(
             StatusCode::TOO_MANY_REQUESTS,
             "Too many authentication requests.",
@@ -129,10 +143,10 @@ async fn auth_limit(State(state): State<Arc<AppState>>, request: Request, next: 
             .insert("retry-after", HeaderValue::from_static("60"));
         return response;
     }
-    times.push_back(now);
-    drop(times);
+
     next.run(request).await
 }
+
 fn body<T>(value: Result<Json<T>, JsonRejection>) -> Result<T, Error> {
     value.map(|Json(v)| v).map_err(|e| {
         if e.status() == StatusCode::PAYLOAD_TOO_LARGE {
