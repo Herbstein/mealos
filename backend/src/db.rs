@@ -27,10 +27,16 @@ pub async fn migrate(pool: &PgPool) -> Result<(), Error> {
         .execute(&mut *tx)
         .await?;
     sqlx::query("CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, checksum text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())").execute(&mut *tx).await?;
-    for (name, sql) in [(
-        "001_foundation.sql",
-        include_str!("../migrations/001_foundation.sql"),
-    )] {
+    for (name, sql) in [
+        (
+            "001_foundation.sql",
+            include_str!("../migrations/001_foundation.sql"),
+        ),
+        (
+            "002_library_sync.sql",
+            include_str!("../migrations/002_library_sync.sql"),
+        ),
+    ] {
         let checksum = digest(sql);
         let existing: Option<String> =
             sqlx::query_scalar("SELECT checksum FROM schema_migrations WHERE name=$1")

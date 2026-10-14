@@ -31,6 +31,44 @@ final class BackendClientTests: XCTestCase {
         {"user":{"id":"user-1"},"tokenType":"Bearer","accessToken":"new-access","refreshToken":"new-refresh","accessExpiresAt":"2099-10-13T12:00:00.123456Z","sessionExpiresAt":"2099-11-13T12:00:00Z"}
         """.utf8)
     }
+    func testLibraryUsesAppleSessionAndPreservesRetryPayload() async throws {
+        let stub = BackendStub([(200, Data(#"{"revision":1}"#.utf8)), (200, Data(#"{"revision":1}"#.utf8))])
+        let client = BackendClient(baseURL: base, storage: MemorySession(session()), transport: { try await stub.send($0) })
+        let write = LibraryWrite(baseRevision: 0, library: LibrarySnapshot())
+        _ = try await client.library(expectedUser: "user-1", write: write)
+        _ = try await client.library(expectedUser: "user-1", write: write)
+        let requests = await stub.requests
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].httpBody, requests[1].httpBody)
+        XCTAssertEqual(requests[0].url?.path, "/api/v1/library")
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "Authorization"), "Bearer old-access")
+    }
+    func testOversizedLibraryIsDefinitivelyRejectedWithoutNetworkRequest() async throws {
+        let stub = BackendStub([])
+        let client = BackendClient(baseURL: base, storage: MemorySession(session()), transport: { try await stub.send($0) })
+        var library = LibrarySnapshot(); library.state.notes["rice"] = String(repeating: "x", count: 2_000_001)
+        do {
+            _ = try await client.library(expectedUser: "user-1", write: LibraryWrite(baseRevision: 0, library: library))
+            XCTFail("Expected size rejection")
+        } catch let failure as BackendFailure { XCTAssertEqual(failure.status, 413) }
+        let requests = await stub.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
+    func testLibraryExpiredSessionClearsCredentials() async throws {
+        let stub = BackendStub([(401, Data(#"{"error":"expired"}"#.utf8))])
+        let storage = MemorySession(session())
+        let client = BackendClient(baseURL: base, storage: storage, transport: { try await stub.send($0) })
+        do { _ = try await client.library(expectedUser: "user-1"); XCTFail("Expected expiry") }
+        catch let failure as BackendFailure { XCTAssertEqual(failure.status, 401) }
+        XCTAssertNil(try storage.load())
+    }
+    func testLibraryRejectsWrongAccountBeforeSending() async throws {
+        let stub = BackendStub([])
+        let client = BackendClient(baseURL: base, storage: MemorySession(session()), transport: { try await stub.send($0) })
+        do { _ = try await client.library(expectedUser: "other"); XCTFail("Expected account mismatch") } catch {}
+        let requests = await stub.requests
+        XCTAssertTrue(requests.isEmpty)
+    }
     func testAssistantUsesBackendSessionAndDoesNotRetryCredits() async throws {
         let stub = BackendStub([(402, Data(#"{"error":"Claude credits are exhausted.","pccFallbackAllowed":true}"#.utf8))])
         let storage = MemorySession(session())

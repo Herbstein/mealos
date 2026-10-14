@@ -1,4 +1,4 @@
-use crate::{Error, apple::AppleVerifier, assistant, auth, recipes};
+use crate::{Error, apple::AppleVerifier, assistant, auth, library_sync, recipes};
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Path, Request, State, rejection::JsonRejection},
@@ -54,6 +54,11 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/ready", get(ready))
         .route("/v1/me", get(me))
         .route("/v1/recipes/{id}", get(recipe))
+        .merge(
+            Router::new()
+                .route("/v1/library", get(library_read).post(library_write))
+                .layer(DefaultBodyLimit::max(2_000_000)),
+        )
         .merge(
             Router::new()
                 .route("/v1/recipe-chat", post(chat))
@@ -138,7 +143,7 @@ fn bearer(headers: &HeaderMap) -> Result<&str, Error> {
 }
 async fn ready(State(state): State<Arc<AppState>>) -> Result<Json<Value>, Error> {
     let present: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE name='001_foundation.sql')",
+        "SELECT count(*)=2 FROM schema_migrations WHERE name IN ('001_foundation.sql','002_library_sync.sql')",
     )
     .fetch_one(&state.pool)
     .await?;
@@ -257,4 +262,23 @@ async fn chat(
         Ok(value) => Json(value).into_response(),
         Err(e) => e.into_response(),
     }
+}
+
+async fn library_read(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<library_sync::Snapshot>, Error> {
+    let identity = auth::authenticate(&state.pool, bearer(&headers)?).await?;
+    Ok(Json(library_sync::read(&state.pool, identity.id).await?))
+}
+async fn library_write(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    input: Result<Json<library_sync::Write>, JsonRejection>,
+) -> Result<Json<Value>, Error> {
+    let identity = auth::authenticate(&state.pool, bearer(&headers)?).await?;
+    let Json(input) = input.map_err(|_| Error::bad_request())?;
+    Ok(Json(
+        library_sync::write(&state.pool, identity.id, input).await?,
+    ))
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the checked-in Xcode project using only Python's standard library.
-Rerun after adding sources or adding the optional Firebase Apple plist.
+Rerun after adding sources or resources.
 """
 import hashlib, json, pathlib, plistlib
 root = pathlib.Path(__file__).resolve().parents[1]
@@ -17,11 +17,6 @@ resource_refs = [ref(str(p.relative_to(root)), 'folder.iconcomposer' if p.suffix
 src_phase = add('sources', 'PBXSourcesBuildPhase', buildActionMask=2147483647, files=[add('build:'+r,'PBXBuildFile',fileRef=r) for r in source_refs], runOnlyForDeploymentPostprocessing=0)
 res_phase = add('resources', 'PBXResourcesBuildPhase', buildActionMask=2147483647, files=[add('build:'+r,'PBXBuildFile',fileRef=r) for r in resource_refs], runOnlyForDeploymentPostprocessing=0)
 packages = []; products = []
-for name, url, minimum, libraries in [
-    ('firebase', 'https://github.com/firebase/firebase-ios-sdk.git', '12.0.0', ['FirebaseAuth','FirebaseFirestore']),
-    ('google', 'https://github.com/google/GoogleSignIn-iOS.git', '9.0.0', ['GoogleSignIn'])]:
-    package = add(name, 'XCRemoteSwiftPackageReference', repositoryURL=url, requirement={'kind':'upToNextMajorVersion','minimumVersion':minimum}); packages.append(package)
-    for library in libraries: products.append(add(library,'XCSwiftPackageProductDependency',package=package,productName=library))
 frameworks = add('frameworks','PBXFrameworksBuildPhase',buildActionMask=2147483647,files=[add('link:'+r,'PBXBuildFile',productRef=r) for r in products],runOnlyForDeploymentPostprocessing=0)
 product = add('app','PBXFileReference',explicitFileType='wrapper.application',includeInIndex=0,path='Forkware.app',sourceTree='BUILT_PRODUCTS_DIR')
 product_group = add('products','PBXGroup',children=[product],name='Products',sourceTree='<group>')
@@ -29,7 +24,7 @@ config_ref = ref('Config.xcconfig','text.xcconfig')
 info_ref = ref('MealOS/Info.plist','text.plist.xml')
 group = add('root','PBXGroup',children=[add('sourceGroup','PBXGroup',children=source_refs,name='Source',sourceTree='<group>'),add('resourceGroup','PBXGroup',children=resource_refs,name='Resources',sourceTree='<group>'),config_ref,info_ref,product_group],sourceTree='<group>')
 common = {'SDKROOT':'iphoneos','IPHONEOS_DEPLOYMENT_TARGET':'17.0','SWIFT_VERSION':'5.0','CLANG_ENABLE_MODULES':'YES','CLANG_ENABLE_OBJC_ARC':'YES','ENABLE_USER_SCRIPT_SANDBOXING':'YES'}
-app_settings = {'PRODUCT_BUNDLE_IDENTIFIER':'com.arjunakankipati.forkware','PRODUCT_NAME':'$(TARGET_NAME)','TARGETED_DEVICE_FAMILY':'1,2','INFOPLIST_FILE':'MealOS/Info.plist','GENERATE_INFOPLIST_FILE':'NO','CODE_SIGN_STYLE':'Automatic','DEVELOPMENT_TEAM':'TDBAHN96B3','CURRENT_PROJECT_VERSION':'5','MARKETING_VERSION':'0.2','CODE_SIGN_ENTITLEMENTS':'MealOS/MealOS.entitlements','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','SUPPORTS_MACCATALYST':'NO','ASSETCATALOG_COMPILER_APPICON_NAME':'AppIcon','LD_RUNPATH_SEARCH_PATHS':['$(inherited)','@executable_path/Frameworks'],'SWIFT_EMIT_LOC_STRINGS':'YES'}
+app_settings = {'PRODUCT_BUNDLE_IDENTIFIER':'com.arjunakankipati.forkware','PRODUCT_NAME':'$(TARGET_NAME)','TARGETED_DEVICE_FAMILY':'1,2','INFOPLIST_FILE':'MealOS/Info.plist','GENERATE_INFOPLIST_FILE':'NO','CODE_SIGN_STYLE':'Automatic','DEVELOPMENT_TEAM':'TDBAHN96B3','CURRENT_PROJECT_VERSION':'6','MARKETING_VERSION':'0.3.0','CODE_SIGN_ENTITLEMENTS':'$(FORKWARE_ENTITLEMENTS)','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','SUPPORTS_MACCATALYST':'NO','ASSETCATALOG_COMPILER_APPICON_NAME':'AppIcon','LD_RUNPATH_SEARCH_PATHS':['$(inherited)','@executable_path/Frameworks'],'SWIFT_EMIT_LOC_STRINGS':'YES'}
 def configs(prefix, values):
     items=[]
     for name in ['Debug','Release']:

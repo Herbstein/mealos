@@ -10,3 +10,7 @@ Production `forkware-api` deploys from `kanki6315/mealos` on `main`, with servic
 root `/backend`. Use a pull request and merge for code deployments; do not upload
 local working trees to Railway unless the user explicitly requests that exception.
 The legacy `mealos` assistant service is retired. Use only `forkware-api` for assistant requests. See `backend/README.md`.
+
+# iOS distribution
+
+Distribute builds through TestFlight only. Never install or launch the app directly on a physical device.

@@ -101,6 +101,16 @@ public struct UserState: Codable, Equatable, Sendable {
     public var plan: [PlanEntry] = []
     public init() {}
     private enum CodingKeys: String, CodingKey { case schemaVersion, favorites, ratings, notes, pantry, checkedGroceries, plan }
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(schemaVersion, forKey: .schemaVersion)
+        try c.encode(favorites.sorted(), forKey: .favorites)
+        try c.encode(ratings, forKey: .ratings)
+        try c.encode(notes, forKey: .notes)
+        try c.encode(pantry.sorted(), forKey: .pantry)
+        try c.encode(checkedGroceries.sorted(), forKey: .checkedGroceries)
+        try c.encode(plan, forKey: .plan)
+    }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let version = try c.decode(Int.self, forKey: .schemaVersion)

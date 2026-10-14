@@ -2,18 +2,18 @@
 
 Forkware is the displayed app name; the Xcode project and scheme are also named `Forkware`.
 
-A universal native SwiftUI client for iOS/iPadOS 17+, sharing the existing Android recipe format and Firebase library data, with Claude through the Rust backend and Apple PCC fallback. The Android app in `app/` is deprecated as of October 6, 2026 and is no longer developed or maintained. This Apple client is the active development target. The catalog exporter still reads the retained Android `RecipeCatalog.kt` seed data.
+A universal native SwiftUI client for iOS/iPadOS 17+, using the existing recipe format and Apple-authenticated library sync, with Claude through the Rust backend and Apple PCC fallback. The Android app in `app/` is deprecated as of October 6, 2026 and is no longer developed or maintained. This Apple client is the active development target. The catalog exporter still reads the retained Android `RecipeCatalog.kt` seed data.
 
 ## Open and run
 
 1. Install full **Xcode** with an iOS simulator runtime. Apple's standalone Command Line Tools cannot build this app.
-2. Open `ios/Forkware.xcodeproj`. Let Xcode resolve Firebase and Google Sign-In packages.
+2. Open `ios/Forkware.xcodeproj`.
 3. Select the **Forkware** scheme and an iPhone or iPad simulator, then Run.
 4. To install on your devices, select your Apple development team under **Signing & Capabilities**, then run on the connected device. Do not commit personal signing overrides.
 
-The Firebase Apple app (`com.arjunakankipati.forkware`) remains registered in `mealos-af8fc` for legacy library sync. `Config.xcconfig` points account and assistant requests at `https://forkware.arjunakankipati.com/api`. No server credential or assistant token is included in the app.
+`Config.xcconfig` points account and assistant requests at `https://forkware.arjunakankipati.com/api`. No server credential or assistant token is included in the app.
 
-Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with the same Google account used on Android to access the same cloud library. Claude access uses a backend user UUID allowlist after Apple sign-in.
+Core recipes, planning, groceries, pantry, favorites, notes, editing, and cooking work without signing in. Sign in with Apple to sync your private library across iPhone and iPad. Claude access uses a backend user UUID allowlist after Apple sign-in.
 
 ## Apple account and Rust backend (0.2)
 
@@ -44,10 +44,11 @@ credential exchanges are not automatically replayed. Launch and foreground
 checks restore the session and check Apple credential state. Explicit sign-out
 clears Keychain and attempts server revocation; an offline failure is reported.
 
-Apple sign-in currently connects the account only. It does not migrate or upload
-local recipes or link Google and Apple accounts. Claude access is separately controlled by the backend allowlist. Google library sync remains available. Recipe
-writes/sync, account deletion, and Apple's server-to-server revocation lifecycle
-remain release prerequisites described in the backend plan.
+Apple sign-in connects account, assistant, and library sync. This personal release starts
+fresh: no Firestore import, Google account linking, or in-app migration is performed.
+Deploy the library API before installing this build. Claude access remains separately
+controlled by the backend allowlist. Account deletion and Apple's server-to-server
+revocation lifecycle remain public-release prerequisites.
 
 Run `swift test --package-path ios` for account transport/session and existing
 core tests. On a signed device, verify first sign-in, cancellation, app relaunch,
@@ -62,7 +63,7 @@ production; the unit tests inject only their own HTTP transport and storage.
 - Consolidated groceries grouped by category, pantry exclusions, and persistent checkmarks.
 - Favorites, ratings, notes, manual recipes, and customization of bundled recipes as personal copies.
 - Versioned `.mealosrecipe` import/export. Imports open in the editor for review; they never save automatically.
-- Native Google sign-in and Firestore sync using the Android document paths and JSON schema.
+- Batched private library sync through the Rust backend using the Apple account.
 - Local Recipe Assistant history, model selection, sources, generated drafts, and a copyable ChatGPT prompt.
 - Printed-page scanning and photo OCR with Apple Vision/VisionKit; extracted text stays in the composer until Send.
 - Cooking with large instructions, next-step previews, scaled ingredients, and persistent device-local timers.
@@ -70,13 +71,34 @@ production; the unit tests inject only their own HTTP transport and storage.
 
 ## Data and synchronization
 
-`Application Support/MealOS/mealos-v1.json` holds the local library, preferences, assistant history, cooking positions, timers, and pending cloud-write markers. Writes are atomic. Failed writes roll back the in-memory snapshot and retain an edited recipe's unsaved draft. An unreadable local snapshot is preserved instead of being replaced with empty data.
+`Application Support/MealOS/forkware-v2.json` holds the new local snapshot. The former
+`mealos-v1.json` and Firestore data are left untouched and are not read or uploaded.
+Bundled core recipes remain available; personal recipes, plans, and preferences start
+fresh. Writes are atomic and roll back in-memory state on failure.
 
-Cloud documents remain `/users/{uid}/mealos/preferences` and `/users/{uid}/mealos/recipes`, each with `schemaVersion`, JSON `payload`, and `updatedAt`. No Firestore rules change is required.
+Library edits and pending uploads are saved together. An upload waits 8 seconds after
+the most recent edit, with a 60-second maximum during continuous editing. Backgrounding
+attempts a flush within iOS's available execution time. Failed transient requests retry
+with exponential delays from 8 seconds to 5 minutes while foregrounded. Definitive
+validation/size rejections release the rejected batch while retaining current edits,
+so correcting the library creates a new upload. Ambiguous failures keep the original
+operation ID. Launch,
+foreground, and **Sync now** also retry/fetch. There is no idle polling or guaranteed
+background delivery. Pending uploads survive restarts.
 
-On the first connection to an existing account, its cloud library initializes the device, replacing the current local library. Empty accounts are seeded from local data. Subsequent offline edits for the same account are marked durably and retried on reconnect; unacknowledged documents are protected from listener replacement. Simultaneous edits to the same cloud document retain the existing last-write-wins behavior. Signing out keeps local data but ends the pending-write association with that account.
+Each batch replaces one private library snapshot (personal recipes and all user state)
+with an expected server revision and a persistent operation ID. The server returns the
+receipt and current snapshot in one response. Stale writes fail with 409; the app retains
+local edits and offers an explicit choice of device or cloud library. Both alternatives
+are retained in the account journal's `recovered` array for manual recovery. Conflict
+resolution replaces the entire library; independent edits are not automatically merged.
+Account caches and pending operations are isolated by backend URL and Apple user ID;
+signed-out edits stay in their separate device library. Signing out hides the Apple
+library without discarding pending edits.
 
-Timers, cooking positions, and assistant chats are intentionally not cloud-synchronized. Timers persist absolute deadlines; local notifications are scheduled with the operating system. Their sounds obey notification, Silent mode, and Focus settings. This version does not implement AlarmKit, Live Activities, or cross-device cooking handoff.
+Timers, cooking positions, and assistant chats remain device-local. This fresh-start
+release does not import their old snapshot values. Timer notifications obey notification,
+Silent mode, and Focus settings; cross-device cooking handoff is not implemented.
 
 ## Configuration and regeneration
 
@@ -89,16 +111,16 @@ older iOS versions. After editing the vector artwork, regenerate that fallback:
 swift ios/scripts/make_icon.swift ios/MealOS/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
 ```
 
-For a replacement Apple Firebase registration, use the Apple `GoogleService-Info.plist`, never Android's `google-services.json`:
+To override the backend URL and optional signing team:
 
 ```sh
 python3 ios/scripts/configure.py \
-  --firebase-plist /absolute/path/GoogleService-Info.plist \
   --backend-url https://forkware.arjunakankipati.com/api \
   --team YOURTEAMID
 ```
 
-The helper checks the Firebase project and bundle ID, copies the public client config, writes ignored `Config.local.xcconfig` overrides, and regenerates the project. Update shared defaults deliberately when changing the project's registration. Personal Apple signing settings belong in the local override, e.g. `DEVELOPMENT_TEAM = ABCDE12345`.
+The helper validates the URL and team, writes ignored `Config.local.xcconfig` overrides,
+and regenerates the project. Personal signing settings belong in that local override.
 
 After changing Kotlin seed recipes or adding native source/resource files:
 
@@ -107,7 +129,7 @@ python3 ios/scripts/export_catalog.py
 python3 ios/scripts/generate_project.py
 ```
 
-Both scripts use Python's standard library; XcodeGen and CocoaPods are unnecessary. The checked-in project uses Swift Package Manager for Firebase and Google Sign-In. Core logic itself has no external dependencies and is also available as the `MealOSCore` Swift package.
+Both scripts use Python's standard library; XcodeGen and CocoaPods are unnecessary. The app has no Firebase or Google Sign-In dependency. Core logic itself has no external dependencies and is also available as the `MealOSCore` Swift package.
 
 ## Releasing to TestFlight
 
@@ -121,7 +143,7 @@ One-time setup:
 
 1. Create an iOS app in App Store Connect for bundle ID `com.arjunakankipati.forkware`, SKU
    `mealos`, and your chosen available display name. Keep the bundle ID aligned
-   with the bundled Firebase configuration.
+   with the backend Apple client ID.
 2. Use the paid Apple Developer team in Xcode Signing & Capabilities. The script
    reads the project's team and version; `DEVELOPMENT_TEAM` and
    `MARKETING_VERSION` environment values can override them.
@@ -162,7 +184,7 @@ updates in the developer account; it only disables binary upload. The profile
 helper reuses or creates a MealOS App Store profile without deleting old ones.
 
 The release script has not yet completed a real signed archive or TestFlight
-upload. Before sharing a build, validate Google sign-in, sync, the live assistant
+upload. Before sharing a build, validate Apple sign-in, two-device library sync, the live assistant
 endpoint, and real-device timer delivery.
 
 ## Running validation
@@ -208,8 +230,14 @@ Historical simulator validation used Xcode 26.6 and iOS 26.5; current assistant 
 
 ## Assistant providers
 
-Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment target through the Rust backend; PCC fallback is available only on supported iOS 27+ devices. `ForkwareBackendURL` configures account and assistant requests. Sign in with Apple in Settings for Claude access; Google authentication remains solely for library sync.
+Build with Xcode 27 or later. Claude works on the existing iOS 17+ deployment target through the Rust backend; PCC fallback is available only on supported iOS 27+ devices. `ForkwareBackendURL` configures account and assistant requests. Sign in with Apple in Settings for Claude access; The same Apple account authenticates library sync.
 
 The target includes `com.apple.developer.private-cloud-compute`. Enable the approved PCC entitlement for the app identifier and regenerate signing profiles before device/TestFlight distribution. Simulator builds verify compilation but cannot establish that the entitlement, Apple quota, and cloud inference work on a real device.
 
 Claude failures leave the conversation and current draft intact. Credit exhaustion, capacity limits, provider failures, and eligible transport failures offer a clearly labeled PCC button; account denial, invalid requests and explicit refusals do not. PCC sends a conservative 16 KB UTF-8 suffix of the conversation with the current draft, reserving context for instructions/reasoning/output. An oversized latest request is rejected rather than silently truncated. It never presents generated URLs as searched sources. If PCC is unavailable or out of quota, a persistent status explains why.
+
+### PCC approval pending
+
+Default builds are Claude-only: `FORKWARE_PCC_ENABLED = NO` in `Config.xcconfig`. This selects the entitlement file without PCC and disables the fallback before creating an Apple model. The PCC implementation and `MealOS-PCC.entitlements` remain ready. After Apple enables PCC for the app identifier and signing profiles, set `FORKWARE_PCC_ENABLED = YES` to enable both signing and runtime support together. Verify the resulting archive entitlements before distribution.
+
+Distribute all device builds through TestFlight. Do not install or launch directly on a physical device.

@@ -138,11 +138,8 @@ final class MealOSCoreTests: XCTestCase {
         let file = SnapshotFile(url: folder.appendingPathComponent("state.json"))
         XCTAssertTrue(try file.read().customRecipes.isEmpty)
         var snapshot = LocalSnapshot(); snapshot.customRecipes = try catalog(); snapshot.state.notes["bbq-chicken"] = "Test"
-        snapshot.cloudOwnerUID = "owner"; snapshot.dirtyCloudDocuments = ["preferences"]
         try file.write(snapshot)
         XCTAssertEqual(try file.read().state, snapshot.state)
-        XCTAssertEqual(try file.read().dirtyCloudDocuments, ["preferences"])
-        XCTAssertEqual(try file.read().cloudOwnerUID, "owner")
         XCTAssertEqual(try file.read().customRecipes, snapshot.customRecipes)
         try Data("broken".utf8).write(to: file.url)
         XCTAssertThrowsError(try file.read())

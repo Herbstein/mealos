@@ -48,6 +48,18 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    func testLibrarySyncSettings() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        tap("Settings")
+        XCTAssertTrue(app.staticTexts["Library sync"].existsOrWait(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Sign in with Apple to sync your library"].exists)
+        XCTAssertFalse(app.buttons["Sign in with Google"].exists)
+        XCTAssertFalse(app.buttons["Reconnect sync"].exists)
+        tap("Done")
+        tap("Recipes")
+        XCTAssertTrue(app.buttons["Settings"].exists)
+    }
     func testAssistantRequiresAppleAndKeepsFailedMessage() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()
@@ -71,7 +83,7 @@ final class MealOSUITests: XCTestCase {
         let apple = app.buttons["apple-account-sign-in"]
         XCTAssertTrue(apple.existsOrWait(timeout: 10))
         XCTAssertTrue(apple.isEnabled && apple.isHittable)
-        XCTAssertTrue(app.buttons["Sign in with Google"].exists)
+        XCTAssertFalse(app.buttons["Sign in with Google"].exists)
         capture("apple-account-settings")
         // Real Apple authorization requires a signed device and a deployed API.
     }
