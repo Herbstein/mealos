@@ -7,7 +7,7 @@ import UserNotifications
     @Published var error: String?
     @Published var timerNotice: String?
     @Published var sending = false
-    var onCloudChange: ((Bool) -> Void)?
+    var onLibraryChange: (() -> Void)?
     private var storageHealthy = true
     private var durableSnapshot = LocalSnapshot()
     private let file: SnapshotFile
@@ -23,7 +23,7 @@ import UserNotifications
         if ProcessInfo.processInfo.arguments.contains("--uitesting") { folder = "MealOS-UITests" }
         #endif
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent(folder)
-        file = SnapshotFile(url: directory.appendingPathComponent("mealos-v1.json"))
+        file = SnapshotFile(url: directory.appendingPathComponent("forkware-v2.json"))
         #if DEBUG
         if folder == "MealOS-UITests", ProcessInfo.processInfo.arguments.contains("--reset-ui-test-state") {
             try? FileManager.default.removeItem(at: file.url)
@@ -52,32 +52,33 @@ import UserNotifications
         let previousPlan = snapshot.state.plan
         mutation(&snapshot.state)
         if previousPlan != snapshot.state.plan { snapshot.state.checkedGroceries.removeAll() }
-        markDirty("preferences"); if persist() { onCloudChange?(false) }
-    }
-    @discardableResult func applyCloud(state: UserState? = nil, recipes: [Recipe]? = nil) -> Bool {
-        guard storageHealthy else { return false }
-        if let state { snapshot.state = state }
-        if let recipes { snapshot.customRecipes = recipes }
-        return persist()
+        recordLibraryEdit(); if persist() { onLibraryChange?() }
     }
     func save(_ recipe: Recipe) -> Bool {
         guard storageHealthy else { return false }
         guard recipe.validationErrors.isEmpty else { error = recipe.validationErrors.joined(separator: "\n"); return false }
         if let i = snapshot.customRecipes.firstIndex(where: { $0.id == recipe.id }) { snapshot.customRecipes[i] = recipe }
         else { snapshot.customRecipes.append(recipe) }
-        markDirty("recipes"); guard persist() else { return false }; onCloudChange?(true); return true
+        recordLibraryEdit(); guard persist() else { return false }; onLibraryChange?(); return true
     }
-    @discardableResult func bindCloud(to uid: String) -> Bool {
-        if snapshot.cloudOwnerUID != uid { snapshot.dirtyCloudDocuments = [] }
-        snapshot.cloudOwnerUID = uid; return persist()
+    var libraryJournal: LibraryJournal? {
+        guard let owner = snapshot.backendOwner else { return nil }
+        return snapshot.backendLibraries?[owner]
     }
-    func unbindCloud() { snapshot.cloudOwnerUID = nil; snapshot.dirtyCloudDocuments = []; persist() }
-    func acknowledgeCloud(_ name: String) { snapshot.dirtyCloudDocuments?.remove(name); persist() }
-    private func markDirty(_ name: String) {
-        if snapshot.cloudOwnerUID != nil {
-            if snapshot.dirtyCloudDocuments == nil { snapshot.dirtyCloudDocuments = [] }
-            snapshot.dirtyCloudDocuments?.insert(name)
-        }
+    private func recordLibraryEdit() {
+        guard let owner = snapshot.backendOwner else { return }
+        snapshot.backendLibraries?[owner]?.edit(LibrarySnapshot(state: snapshot.state, recipes: snapshot.customRecipes))
+    }
+    @discardableResult func activateLibrary(_ owner: String) -> Bool {
+        guard storageHealthy else { return false }
+        if snapshot.backendOwner == owner { return true }
+        snapshot.activateBackendLibrary(owner)
+        return persist()
+    }
+    @discardableResult func updateLibraryJournal(_ mutation: (inout LibraryJournal) throws -> Void) throws -> Bool {
+        guard storageHealthy, libraryJournal != nil else { return false }
+        try snapshot.updateBackendJournal(mutation)
+        return persist()
     }
     func plan(day: Int, recipe: Recipe, portion: Portion) {
         updateState { $0.plan.removeAll { $0.day == day }; $0.plan.append(PlanEntry(day: day, recipe: recipe.id, portion: portion)) }

@@ -72,7 +72,7 @@ async fn database_http_and_serverless_lifecycle() {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(count, 1);
+    assert_eq!(count, 2);
     let signer = Signing::new();
     let app = http::router(AppState::new(
         pool.clone(),
@@ -501,4 +501,82 @@ async fn database_http_and_serverless_lifecycle() {
         200
     );
     pool.close().await;
+}
+
+#[tokio::test]
+#[ignore = "run scripts/test-postgres.py"]
+async fn batched_library_sync() {
+    let pool = db::pool(&std::env::var("TEST_DATABASE_URL").unwrap()).unwrap();
+    db::migrate(&pool).await.unwrap();
+    let signer = Signing::new();
+    let app = http::router(AppState::new(
+        pool,
+        AppleVerifier::with_test_keys(AUDIENCE.into(), signer.keys.clone()),
+    ));
+    let a = login(&app, &signer, "sync-a").await;
+    let b = login(&app, &signer, "sync-b").await;
+    let path = "/api/v1/library";
+    assert_eq!(request(&app, "GET", path, Value::Null, None).await.0, 401);
+    let empty = request(&app, "GET", path, Value::Null, access(&a)).await;
+    assert_eq!(empty.1, json!({"revision":0,"library":null}));
+    let catalog: Value =
+        serde_json::from_str(include_str!("../../ios/MealOS/Resources/recipes.json")).unwrap();
+    let library = json!({"recipes":[catalog[0].clone()],"state":{"schemaVersion":2,"favorites":[],"ratings":{},"notes":{"rice":"x".repeat(30000)},"pantry":[],"checkedGroceries":[],"plan":[]}});
+    let first = json!({"operationId":Uuid::new_v4(),"baseRevision":0,"library":library});
+    let second = json!({"operationId":Uuid::new_v4(),"baseRevision":0,"library":library});
+    let (left, right) = tokio::join!(
+        request(&app, "POST", path, first.clone(), access(&a)),
+        request(&app, "POST", path, second.clone(), access(&a))
+    );
+    assert!((left.0 == 200 && right.0 == 409) || (left.0 == 409 && right.0 == 200));
+    let winner = if left.0 == 200 { first } else { second };
+    assert_eq!(
+        request(&app, "POST", path, winner.clone(), access(&a))
+            .await
+            .1["revision"],
+        json!(1)
+    );
+    assert_eq!(
+        request(&app, "GET", path, Value::Null, access(&b)).await.1["revision"],
+        0
+    );
+    let mut next = winner.clone();
+    next["operationId"] = json!(Uuid::new_v4());
+    next["baseRevision"] = json!(1);
+    next["library"]["state"]["notes"] = json!({});
+    assert_eq!(
+        request(&app, "POST", path, next.clone(), access(&a))
+            .await
+            .0,
+        200
+    );
+    // A replay acknowledges the original write, without rolling back later edits.
+    assert_eq!(
+        request(&app, "POST", path, winner.clone(), access(&a))
+            .await
+            .1["revision"],
+        1
+    );
+    let current = request(&app, "GET", path, Value::Null, access(&a)).await.1;
+    assert_eq!(current["revision"], 2);
+    assert_eq!(current["library"]["state"]["notes"], json!({}));
+    let mut altered = winner;
+    altered["library"]["state"]["notes"] = json!({"rice":"different"});
+    assert_eq!(
+        request(&app, "POST", path, altered, access(&a)).await.0,
+        409
+    );
+    next["operationId"] = json!(Uuid::new_v4());
+    next["baseRevision"] = json!(2);
+    next["library"]["state"]["schemaVersion"] = json!(99);
+    assert_eq!(request(&app, "POST", path, next, access(&a)).await.0, 400);
+    let invalid = json!({"operationId":Uuid::new_v4(),"baseRevision":2,"library":{"recipes":[{"id":"broken"}],"state":library["state"]}});
+    assert_eq!(
+        request(&app, "POST", path, invalid, access(&a)).await.0,
+        400
+    );
+    assert_eq!(
+        request(&app, "GET", path, Value::Null, access(&a)).await.1["revision"],
+        2
+    );
 }

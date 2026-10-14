@@ -99,6 +99,16 @@ import SwiftUI
             self.error = error.localizedDescription
         }
     }
+    var syncNamespace: String { Bundle.main.object(forInfoDictionaryKey: "ForkwareBackendURL") as? String ?? "unconfigured" }
+    func library(expectedUser: String, write: LibraryWrite? = nil) async throws -> Data {
+        guard let client else { throw MealOSError("The Forkware backend is not configured.") }
+        do { return try await client.library(expectedUser: expectedUser, write: write) }
+        catch let failure as BackendFailure where failure.status == 401 {
+            user = (try? await client.savedSession())?.tokens.user
+            status = "Sign in with Apple again"
+            throw failure
+        }
+    }
     func recipeChat(_ data: Data) async throws -> Data {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--uitesting") { throw BackendFailure(status: 401, message: "Sign in with Apple in Settings to use Claude.") }

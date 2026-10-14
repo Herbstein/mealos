@@ -4,7 +4,7 @@ Updated October 13, 2026. Target: Forkware for iPhone and iPad only.
 
 Use Railway Serverless for the Rust API, with Postgres in the same Railway project. Build the new service in `backend/`; the legacy assistant bridge has been removed. Keep Postgres running initially and connect over Railway's private network. This replaces the earlier Supabase proposal and targets a small operating budget for the first 100 users.
 
-The Rust API and Postgres foundation are deployed in the existing Railway `mealos` project. Later import/write/sync phases remain planned. Firebase remains active until migration is complete.
+The Rust API and Postgres foundation are deployed in the existing Railway `mealos` project. Batched personal library sync is implemented locally; production rollout and signed-device verification remain pending. The personal release starts fresh without importing Firestore.
 
 The first backend foundation is implemented in `backend/` using Rust, Axum, Tokio, and SQLx: transactional schema migrations, Apple identity verification and rotating sessions, protected recipe reads, and Railway infrastructure configuration. See [backend setup and endpoint contracts](../backend/README.md). The iOS 0.2 client includes native Apple sign-in and Keychain session handling. Signed-device verification and the later import/write/sync phases remain pending. The API base is `https://forkware.arjunakankipati.com/api`; the hostname root is reserved for the marketing site.
 
@@ -82,6 +82,14 @@ URL fetching must limit response sizes, timeouts, and redirects, and block inter
 
 Provide a minimal shared-link web preview and an “Open in Forkware” action; a full web client is deferred. Define withdrawal and deletion behavior before launch, including how saved versions, attribution, and removed public content are handled.
 
+## Personal sync implementation (October 14, 2026)
+
+The personal release uses a versioned whole-library snapshot with 8-second batching,
+a 60-second maximum delay, durable operation receipts, and explicit conflict resolution.
+It starts with a new local file and empty backend library; there is no Firestore migration.
+See `backend/README.md` and `ios/README.md` for the implemented contract and rollout.
+The per-record SQLite/cursor design below remains a future scalability direction.
+
 ## Local data and synchronization
 
 Preserve the current JSON snapshot during migration. Introduce a local persistence abstraction and move to SQLite when per-record versions and the durable mutation queue are implemented.
@@ -113,6 +121,6 @@ Enable scheduled database-volume backups and test restoration. Railway bills bac
 1. **Foundation:** database migrations, Apple authentication, sessions, recipe/version tables, private-network connection, access-control tests, and API Serverless configuration. Confirm the API actually sleeps after idle connections close.
 2. **Import and personal library:** extraction, review, attribution, durable jobs, local writes, and sync. Verify retries do not duplicate records and interrupted jobs recover without continuous polling.
 3. **Modification and sharing:** forks, published versions, links, review, and curated collections. Verify edits never mutate someone else's saved recipe or planned groceries.
-4. **Migration and release:** back up Firebase and local data, import authenticated accounts as private libraries, preserve existing recipe IDs, and map bundled recipes to version 1. Link identities through authenticated migration rather than email matching. Keep Firebase until two-device verification succeeds.
+4. **Personal release:** deploy and verify batched library sync, then release the fresh-start iOS build. No Firestore import or identity linking is needed. Keep the old data untouched; verify sync on two signed devices before treating the cutover as complete.
 
 Before release, test cold starts and transient 502s, offline edits, concurrent changes, account switching, deletion propagation, process interruption during imports, and database restore. Enable spending alerts and measure a representative week of resource usage, sleep time, image delivery, and AI cost before tightening the budget.
