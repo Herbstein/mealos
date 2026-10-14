@@ -14,11 +14,11 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sqlx::PgPool;
+use sqlx::{PgPool, migrate::MigrationType};
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::{Error, apple::AppleVerifier, assistant, auth, library_sync, recipes};
+use crate::{Error, apple::AppleVerifier, assistant, auth, db, library_sync, recipes};
 
 pub struct AppState {
     pub pool: PgPool,
@@ -152,15 +152,30 @@ fn bearer(headers: &HeaderMap) -> Result<&str, Error> {
         .and_then(|v| v.strip_prefix("Bearer "))
         .ok_or_else(Error::unauthorized)
 }
+
 async fn ready(State(state): State<Arc<AppState>>) -> Result<Json<Value>, Error> {
-    let present: bool = sqlx::query_scalar(
-        "SELECT count(*)=2 FROM schema_migrations WHERE name IN ('001_foundation.sql','002_library_sync.sql')",
+    let migrations = db::MIGRATOR
+        .iter()
+        .filter(|m| m.migration_type == MigrationType::Simple)
+        .map(|m| m.description.to_string())
+        .collect::<Vec<_>>();
+
+    let present = sqlx::query_scalar!(
+        r#"
+SELECT count(*)=$1 AS "present!"
+FROM _sqlx_migrations
+WHERE description = ANY($2)
+  AND success=TRUE
+"#,
+        migrations.len() as i64,
+        &migrations
     )
     .fetch_one(&state.pool)
     .await?;
     if !present {
         return Err(Error::unavailable());
     }
+
     Ok(Json(json!({"ok":true})))
 }
 async fn challenge(
