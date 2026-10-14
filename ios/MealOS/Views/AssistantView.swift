@@ -69,6 +69,7 @@ struct AssistantView: View {
                         }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
                     }
                         .scrollDismissesKeyboard(.interactively)
+                        .contentShape(Rectangle())
                         // The focused composer is a sibling of this scroll view,
                         // so UIKit's scroll dismissal alone does not dismiss it.
                         .simultaneousGesture(DragGesture(minimumDistance: 20).onChanged { value in

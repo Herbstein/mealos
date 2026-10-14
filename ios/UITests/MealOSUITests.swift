@@ -44,7 +44,12 @@ final class MealOSUITests: XCTestCase {
         capture("assistant-keyboard-dismissed")
         editor.tap()
         XCTAssertTrue(app.keyboards.firstMatch.existsOrWait(timeout: 5))
-        app.scrollViews["assistant-conversation"].swipeDown()
+        let conversation = app.scrollViews["assistant-conversation"]
+        // Its accessibility frame extends behind the navigation bar. Start the
+        // drag in visible conversation content, not on the navigation controls.
+        let start = conversation.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+        let end = conversation.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+        start.press(forDuration: 0.1, thenDragTo: end)
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
