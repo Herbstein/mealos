@@ -66,7 +66,9 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Settings"].exists)
     }
     func testAssistantRequiresAppleAndKeepsFailedMessage() throws {
-        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        // Composer drafts live in UserDefaults separately from the snapshot.
+        // A preceding keyboard test intentionally leaves a draft behind.
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state", "-assistant-composer", ""]
         app.launch()
         tap("Assistant")
         let composer = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
