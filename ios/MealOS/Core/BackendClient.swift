@@ -110,6 +110,28 @@ actor BackendClient {
         }
         throw BackendFailure(status: 0, message: "The account service could not connect.")
     }
+    func library(expectedUser: String, write: LibraryWrite? = nil) async throws -> Data {
+        guard try current()?.tokens.user.id == expectedUser else { throw ErrorForLibrary.accountChanged }
+        let token = try await accessToken()
+        guard try current()?.tokens.user.id == expectedUser else { throw ErrorForLibrary.accountChanged }
+        let sessionGeneration = generation
+        var request = URLRequest(url: baseURL.appendingPathComponent("v1/library"), timeoutInterval: 35)
+        request.httpMethod = write == nil ? "GET" : "POST"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let write {
+            let data = try Documents.encode(write)
+            guard data.count <= 2_000_000 else { throw BackendFailure(status: 413, message: "The library exceeds the sync size limit. Reduce its size and sync again. Your edits remain on this device.") }
+            request.httpBody = data
+        }
+        let (data, response) = try await transport(request)
+        guard generation == sessionGeneration else { throw ErrorForLibrary.accountChanged }
+        guard (200..<300).contains(response.statusCode) else {
+            if response.statusCode == 401 { try clear() }
+            throw BackendFailure(status: response.statusCode, message: response.statusCode == 401 ? "Sign in with Apple again to resume library sync." : response.statusCode == 409 ? "Another device changed your library." : "Library sync failed (\(response.statusCode)). Your edits are saved on this device.")
+        }
+        return data
+    }
     func challenge() async throws -> AppleChallenge { try await request("v1/auth/apple/challenge") }
     func signIn(challenge: String, identityToken: String, appleUser: String) async throws -> BackendUser {
         generation = UUID(); refreshTask?.task.cancel(); refreshTask = nil
@@ -203,3 +225,5 @@ actor BackendClient {
 private final class NoBackendRedirects: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
 }
+
+private enum ErrorForLibrary { static let accountChanged = MealOSError("The account changed. Sync stopped.") }

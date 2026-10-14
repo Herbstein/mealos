@@ -1,6 +1,6 @@
 # Forkware backend
 
-The Rust backend uses Axum, Tokio, SQLx/Postgres, native Sign in with Apple, and the Claude Messages API. The iOS assistant authenticates with its existing backend session; Firebase remains only for legacy library sync. Claude credentials are server-only. Apple Private Cloud Compute is an explicit device-side fallback. The legacy Node assistant bridge has been removed.
+The Rust backend uses Axum, Tokio, SQLx/Postgres, native Sign in with Apple, and the Claude Messages API. The iOS assistant authenticates with its existing backend session; Library sync uses the same Apple session. Claude credentials are server-only. Apple Private Cloud Compute is an explicit device-side fallback. The legacy Node assistant bridge has been removed.
 
 ## Local development
 
@@ -125,7 +125,7 @@ Cloudflare CNAME `forkware` points to `fujcv393.up.railway.app`, with Railway's
 certificate. The former `mealos` hostname is no longer used by the app.
 
 The catalog is not seeded automatically. Account deletion, Apple server-side
-revocation notifications, backup/restore verification, and full recipe sync
+revocation notifications, backup/restore verification, and signed-device sync verification
 remain required before a public release.
 
 Verified October 13, 2026: custom-domain HTTPS and ownership validation, `/api/health`
@@ -145,3 +145,31 @@ A process-wide limit permits two active requests and 20 starts per minute. Keep 
 Errors return a stable `code`, friendly `error`, and `pccFallbackAllowed`. Exhausted credits map to 402; provider limits to 429; unavailable/misconfigured providers to 503; handler timeouts to 504. Authentication, authorization, malformed input, and explicit model refusal do not offer fallback. The iOS app offers PCC after eligible errors; it does not silently switch providers. PCC runs on the device through Apple's framework, requires iOS 27, Apple Intelligence availability, the approved entitlement and remaining Apple quota. It has no web search. Context is bounded independently and the local draft/history are retained.
 
 Deployment order: merge this PR through normal CI, configure the two Railway variables, then validate a signed iOS build with Apple sign-in and a real Claude request. Validate PCC on a supported physical device and test exhausted-credit/unavailable-provider behavior. The private legacy `mealos` service can be deleted after the new backend is healthy; no assistant data migration is required. Older app builds must be updated.
+
+## Batched personal library sync
+
+`GET /api/v1/library` returns `{revision, library}` for the authenticated Apple user;
+a new account returns revision 0 and null. `POST /api/v1/library` accepts
+`{operationId, baseRevision, library: {recipes, state}}`, where state is the existing
+schema-2 iOS user state. It atomically returns `{revision, snapshot: {revision, library}}`.
+The outer revision acknowledges the operation; the snapshot may be newer on a replay.
+The body limit is 2 MB. Recipe content and state shape are validated before writing.
+
+Migration `002_library_sync.sql` adds private snapshots and idempotency receipts.
+This is deliberately separate from publication/version tables: sync does not publish
+recipes or change `/v1/recipes/{id}`. One transaction locks the account, checks its
+expected revision, writes the entire snapshot, and records the operation. A retry with
+the same operation ID/content returns the original receipt plus current snapshot.
+Reusing an ID with different content or writing a stale revision returns 409.
+Whole-snapshot revision checks also prevent stale devices from resurrecting deletions.
+
+The iOS client batches edits for 8 seconds, with a 60-second maximum during continuous
+editing; it persists retries and resolves whole-library conflicts explicitly. There is
+no always-on polling. This private, small-library protocol is not a per-record or
+incremental sync API; large libraries and automatic field-level merging are deferred.
+
+Fresh-start rollout: merge/deploy the backend through the normal GitHub flow, verify
+`/ready` and authenticated library requests, then install the new iOS build and test
+on both devices. The new client uses a separate local file and removes Google SDKs.
+No Firestore data is migrated or deleted. Do not roll back to the Google client expecting
+new edits to be present there; preserve the new local file and Postgres data on rollback.

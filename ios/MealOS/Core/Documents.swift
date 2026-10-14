@@ -73,8 +73,8 @@ public struct LocalSnapshot: Codable {
     public var customRecipes: [Recipe] = []
     public var timers: [CookingTimer] = []
     public var cookingSteps: [String: Int] = [:]
-    public var cloudOwnerUID: String?
-    public var dirtyCloudDocuments: Set<String>?
+    var backendOwner: String?
+    var backendLibraries: [String: LibraryJournal]?
     public var assistant = AssistantHistory()
     public init() {}
 }

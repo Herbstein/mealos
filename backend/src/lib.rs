@@ -3,6 +3,7 @@ pub mod assistant;
 pub mod auth;
 pub mod db;
 pub mod http;
+pub mod library_sync;
 pub mod recipes;
 
 use axum::{
