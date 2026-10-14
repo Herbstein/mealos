@@ -1,4 +1,3 @@
-use crate::Error;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 use rand::{RngCore, rngs::OsRng};
@@ -7,8 +6,18 @@ use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
+use crate::Error;
+
+fn bytes_to_hex(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        s.push_str(&format!("{:02x}", byte));
+    }
+    s
+}
+
 pub fn digest(value: &str) -> String {
-    format!("{:x}", Sha256::digest(value.as_bytes()))
+    bytes_to_hex(&Sha256::digest(value.as_bytes()))
 }
 fn token(prefix: &str) -> String {
     let mut bytes = [0u8; 32];
