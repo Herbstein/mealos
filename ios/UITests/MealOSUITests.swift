@@ -21,6 +21,38 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(button.existsOrWait(timeout: 15), "Missing button: \(label)\n\(app.debugDescription)")
         button.tap()
     }
+    func testAssistantKeyboardLayoutAndDismissal() throws {
+        launch(arguments: ["-assistant-composer", ""])
+        tap("Assistant")
+        let editor = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
+        XCTAssertTrue(editor.existsOrWait(timeout: 10))
+        let navigation = app.navigationBars["Recipe Assistant"]
+        let initialTop = navigation.frame.minY
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.existsOrWait(timeout: 5))
+        let text = String(repeating: "A warming lentil soup with carrots and spices.\n", count: 12)
+        editor.typeText(text)
+        let hide = app.buttons["assistant-hide-keyboard"]
+        XCTAssertTrue(hide.isHittable)
+        XCTAssertEqual(navigation.frame.minY, initialTop, accuracy: 2)
+        XCTAssertLessThanOrEqual(editor.frame.maxY, app.keyboards.firstMatch.frame.minY)
+        XCTAssertGreaterThan(app.scrollViews["assistant-conversation"].frame.height, 80)
+        capture("assistant-keyboard-long-draft")
+        hide.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String, text)
+        capture("assistant-keyboard-dismissed")
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.existsOrWait(timeout: 5))
+        let conversation = app.scrollViews["assistant-conversation"]
+        // Its accessibility frame extends behind the navigation bar. Start the
+        // drag in visible conversation content, not on the navigation controls.
+        let start = conversation.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+        let end = conversation.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
     func testLibrarySyncSettings() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()
@@ -56,7 +88,7 @@ final class MealOSUITests: XCTestCase {
         let apple = app.buttons["apple-account-sign-in"]
         XCTAssertTrue(apple.existsOrWait(timeout: 10))
         XCTAssertTrue(apple.isEnabled && apple.isHittable)
-        XCTAssertTrue(app.buttons["Sign in with Google"].exists)
+        XCTAssertFalse(app.buttons["Sign in with Google"].exists)
         capture("apple-account-settings")
         // Real Apple authorization requires a signed device and a deployed API.
     }
