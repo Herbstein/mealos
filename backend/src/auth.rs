@@ -1,6 +1,8 @@
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use rand::{RngCore, rngs::OsRng};
+use rand::rand_core::UnwrapErr;
+use rand::Rng;
+use rand::rngs::SysRng;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
@@ -21,7 +23,9 @@ pub fn digest(value: &str) -> String {
 }
 fn token(prefix: &str) -> String {
     let mut bytes = [0u8; 32];
-    OsRng.fill_bytes(&mut bytes);
+    // The system generator can fail. We automatically unwrap if it does
+    // If checking the error is preferred use `try_fill_bytes`
+    UnwrapErr(SysRng).fill_bytes(&mut bytes);
     format!("{prefix}{}", URL_SAFE_NO_PAD.encode(bytes))
 }
 fn valid_token(value: &str, prefix: &str) -> bool {
