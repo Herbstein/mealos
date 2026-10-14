@@ -4,7 +4,7 @@ import VisionKit
 
 struct AssistantView: View {
     @EnvironmentObject private var store: MealStore
-    @EnvironmentObject private var cloud: CloudService
+    @EnvironmentObject private var account: AppleAccountService
     @AppStorage("assistant-composer") private var composer = ""
     @State private var scan = false
     @State private var scanning = false
@@ -48,9 +48,22 @@ struct AssistantView: View {
                             if let recipe = store.assistant.draft {
                                 Button { draft = recipe } label: { Label("Review \(recipe.shortName)", systemImage: "square.and.pencil").font(.headline).frame(maxWidth: .infinity, minHeight: 48) }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                             }
+                            if let notice = store.assistantNotice {
+                                Text(notice).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("assistant-status")
+                            }
+                            if store.canTryPCC, !store.sending {
+                                if let reason = RecipeAssistant.pccUnavailableReason {
+                                    Text(reason).font(.footnote).foregroundStyle(.secondary)
+                                } else {
+                                    Button("Continue with Apple Private Cloud Compute") {
+                                        Task { await RecipeAssistant.send(store: store, account: account, usePCC: true) }
+                                    }.frame(minHeight: 44).accessibilityIdentifier("assistant-pcc-fallback")
+                                    Text("Sends recent conversation and the current draft to Apple. Web search is unavailable.").font(.footnote).foregroundStyle(.secondary)
+                                }
+                            }
                             if store.sending { ProgressView("Working on your recipe…").frame(maxWidth: .infinity, minHeight: 44) }
                             if !store.sending, store.assistant.messages.last?.role == "user" {
-                                Button("Retry last request") { Task { await RecipeAssistant.send(store: store, cloud: cloud) } }.frame(minHeight: 44)
+                                Button("Retry last request") { Task { await RecipeAssistant.send(store: store, account: account) } }.frame(minHeight: 44)
                             }
                             Color.clear.frame(height: 1).id("bottom")
                         }.padding(20).frame(maxWidth: 800).frame(maxWidth: .infinity)
@@ -74,11 +87,12 @@ struct AssistantView: View {
                     Picker("Model", selection: Binding(get: { store.assistant.model }, set: { model in store.updateAssistant { $0.model = model } })) {
                         Text("Sonnet").tag("sonnet"); Text("Opus").tag("opus"); Text("Haiku").tag("claude-haiku-4-5")
                     }
+                    .disabled(store.sending)
                     Button("New conversation", systemImage: "square.and.pencil") { clear = true }.disabled(store.sending)
                 } label: { Image(systemName: "ellipsis.circle").frame(minWidth: 44, minHeight: 44).accessibilityLabel("Assistant options") }
             }
             .confirmationDialog("Clear this conversation and draft?", isPresented: $clear, titleVisibility: .visible) {
-                Button("Clear conversation", role: .destructive) { store.updateAssistant { let model = $0.model; $0 = AssistantHistory(); $0.model = model }; composer = "" }
+                Button("Clear conversation", role: .destructive) { store.updateAssistant { let model = $0.model; $0 = AssistantHistory(); $0.model = model }; composer = ""; store.assistantNotice = nil; store.canTryPCC = false }
             }
             .sheet(item: $draft) { RecipeEditor(recipe: $0, imported: true) }
             .sheet(isPresented: $scan) { DocumentScanner { result in Task { await readScan(result) } } }
@@ -101,7 +115,7 @@ struct AssistantView: View {
             if scanning { ProgressView("Reading the recipe on this device…") }
             TextField("Describe a meal or paste a recipe", text: $composer, axis: .vertical).lineLimit(1...maximumLines)
                 .focused($composerFocused)
-                .accessibilityIdentifier("assistant-composer")
+                .accessibilityIdentifier("assistant-composer-field")
                 .padding(12).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
             HStack(spacing: 12) {
                 if VNDocumentCameraViewController.isSupported {
@@ -121,7 +135,7 @@ struct AssistantView: View {
                     composerFocused = false
                     let text = composer.trimmingCharacters(in: .whitespacesAndNewlines)
                     store.updateAssistant { $0.messages.append(AssistantMessage(role: "user", content: text)) }; composer = ""
-                    Task { await RecipeAssistant.send(store: store, cloud: cloud) }
+                    Task { await RecipeAssistant.send(store: store, account: account) }
                 } label: { Label("Send", systemImage: "arrow.up").frame(minHeight: 44) }.buttonStyle(.borderedProminent).tint(MealTheme.peach).foregroundStyle(MealTheme.charcoal)
                     .disabled(composer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.sending || scanning)
             }

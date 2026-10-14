@@ -1,0 +1,43 @@
+name: Rust backend
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: forkware_test
+          POSTGRES_PASSWORD: disposable_ci_password
+          POSTGRES_DB: forkware_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U forkware_test -d forkware_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://forkware_test:disposable_ci_password@localhost:5432/forkware_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        run: rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component clippy
+      - name: Check formatting
+        run: cargo +1.99.0 fmt --all --check
+      - name: Lint
+        run: cargo +1.99.0 clippy --locked --all-targets --all-features -- -D warnings
+      - name: Test Apple authentication and Postgres
+        run: cargo +1.99.0 test --locked --features test-fixtures -- --include-ignored
+      - name: Build production image
+        run: docker build -t forkware-backend:ci .

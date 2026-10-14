@@ -24,7 +24,7 @@ final class MealOSUITests: XCTestCase {
     func testAssistantKeyboardLayoutAndDismissal() throws {
         launch(arguments: ["-assistant-composer", ""])
         tap("Assistant")
-        let editor = app.textViews["assistant-composer"]
+        let editor = app.textViews["assistant-composer-field"]
         XCTAssertTrue(editor.existsOrWait(timeout: 10))
         let navigation = app.navigationBars["Recipe Assistant"]
         let initialTop = navigation.frame.minY
@@ -48,6 +48,33 @@ final class MealOSUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    func testAssistantRequiresAppleAndKeepsFailedMessage() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        tap("Assistant")
+        let composer = app.descendants(matching: .any).matching(identifier: "assistant-composer-field").firstMatch
+        XCTAssertTrue(composer.existsOrWait(timeout: 10))
+        composer.tap(); composer.typeText("Make chicken and rice")
+        tap("Send")
+        let status = app.staticTexts["assistant-status"]
+        XCTAssertTrue(status.existsOrWait(timeout: 10))
+        XCTAssertTrue(status.label.contains("Sign in with Apple"))
+        XCTAssertTrue(app.staticTexts["Make chicken and rice"].exists)
+        XCTAssertFalse(app.buttons["assistant-pcc-fallback"].exists)
+        capture("assistant-apple-sign-in-required")
+    }
+    func testAppleAccountSettings() throws {
+        app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
+        app.launch()
+        tap("Settings")
+        XCTAssertTrue(app.navigationBars["Settings"].existsOrWait(timeout: 10))
+        let apple = app.buttons["apple-account-sign-in"]
+        XCTAssertTrue(apple.existsOrWait(timeout: 10))
+        XCTAssertTrue(apple.isEnabled && apple.isHittable)
+        XCTAssertTrue(app.buttons["Sign in with Google"].exists)
+        capture("apple-account-settings")
+        // Real Apple authorization requires a signed device and a deployed API.
+    }
     func testHomeOverviewAndNavigation() throws {
         app.launchArguments = ["--uitesting", "--reset-ui-test-state"]
         app.launch()

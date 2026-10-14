@@ -1,5 +1,6 @@
-// Public Firebase client IDs and the existing authenticated assistant endpoint.
-MEALOS_BRIDGE_URL = https:/$()/mealos.arjunakankipati.com
+// Public Firebase client IDs for legacy library synchronization.
 GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.646428274747-f3g48qmr9pn248dhn4i7st9qcj1i8t1a
+// Rust account API; the root hostname is reserved for the marketing site.
+FORKWARE_BACKEND_URL = https:/$()/forkware.arjunakankipati.com/api
 // Optional signing or development overrides.
 #include? "Config.local.xcconfig"

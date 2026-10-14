@@ -3,11 +3,27 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var store: MealStore
     @EnvironmentObject private var cloud: CloudService
+    @EnvironmentObject private var account: AppleAccountService
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var appleSignOut = false
     @State private var signingIn = false
     @State private var signOut = false
     var body: some View {
         List {
-            Section("Your library") {
+            Section("Forkware account") {
+                if account.user != nil {
+                    Label(account.status, systemImage: "person.crop.circle.badge.checkmark")
+                    Button("Check account connection") { Task { await account.restore() } }.disabled(account.busy)
+                    Button("Sign out of Apple account", role: .destructive) { appleSignOut = true }.disabled(account.busy)
+                } else if account.configured {
+                    AppleAccountButton(account: account).id(colorScheme).frame(height: 44)
+                    if account.busy { ProgressView("Signing in…") }
+                } else {
+                    Text("Account sign-in is unavailable in this build.").foregroundStyle(.secondary)
+                }
+                Text("Apple sign-in connects you to Recipe Assistant and the new recipe service. Your existing library continues to sync through Google.").font(.footnote).foregroundStyle(.secondary)
+            }
+            Section("Your library · Google sync") {
                 Label(cloud.status, systemImage: cloud.account == nil ? "iphone" : "icloud")
                 if let account = cloud.account {
                     Text(account).foregroundStyle(.secondary)
@@ -37,10 +53,16 @@ struct SettingsView: View {
             }
             Section("Forkware") {
                 Text("Plan simply. Shop once. Cook confidently.").font(MealTheme.display(30))
-                Text("Recipes, planning, shopping, and cooking work offline. Recipe Assistant needs an internet connection and an authorized Google account.").font(.footnote).foregroundStyle(.secondary)
+                Text("Recipes, planning, shopping, and cooking work offline. Claude needs an internet connection and an authorized Apple account. Apple Private Cloud Compute is offered as a fallback on supported devices.").font(.footnote).foregroundStyle(.secondary)
                 Text("Barlow Condensed is licensed under the SIL Open Font License. The full license is included in the app bundle.").font(.footnote).foregroundStyle(.secondary)
             }
         }.navigationTitle("Settings").scrollContentBackground(.hidden).background(MealTheme.background)
+            .alert("Account needs attention", isPresented: Binding(get: { account.error != nil }, set: { if !$0 { account.error = nil } })) {
+                Button("OK", role: .cancel) { account.error = nil }
+            } message: { Text(account.error ?? "") }
+            .confirmationDialog("Sign out of your Apple account?", isPresented: $appleSignOut, titleVisibility: .visible) {
+                Button("Sign out", role: .destructive) { Task { await account.signOut() } }
+            } message: { Text("Your local recipes and Google library connection stay on this device.") }
             .confirmationDialog("Sign out of cloud sync?", isPresented: $signOut, titleVisibility: .visible) {
                 Button("Sign out", role: .destructive) { cloud.signOut() }
             } message: { Text("Your local library stays on this device. Any uploads still in progress may not have reached the cloud.") }

@@ -56,10 +56,6 @@ import GoogleSignIn
         do { try Auth.auth().signOut(); GIDSignIn.sharedInstance.signOut(); stop(); account = nil; uid = nil; store?.unbindCloud() }
         catch { self.error = error.localizedDescription }
     }
-    func token() async throws -> String {
-        guard configured, let user = Auth.auth().currentUser else { throw MealOSError("Sign in with Google in Settings to use Recipe Assistant.") }
-        return try await user.getIDToken()
-    }
     private func stop() {
         generation = UUID(); ready = false; connecting = false
         listeners.forEach { $0.remove() }; listeners.removeAll(); pending.removeAll(); revisions.removeAll()
@@ -147,31 +143,5 @@ import GoogleSignIn
                 }
             }
         } catch { self.error = error.localizedDescription; status = "Sync needs attention" }
-    }
-}
-
-@MainActor enum RecipeAssistant {
-    static func send(store: MealStore, cloud: CloudService) async {
-        guard !store.sending else { return }
-        store.sending = true; defer { store.sending = false }
-        do {
-            guard let urlString = Bundle.main.object(forInfoDictionaryKey: "MealOSBridgeURL") as? String,
-                  let base = URL(string: urlString), base.scheme == "https", base.host != nil else {
-                throw MealOSError("Recipe Assistant has not been connected in this build. You can still create recipes or import them from ChatGPT.")
-            }
-            let token = try await cloud.token()
-            var request = URLRequest(url: base.appendingPathComponent("v1/recipe-chat"), timeoutInterval: 120)
-            request.httpMethod = "POST"; request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try AssistantProtocol.request(messages: store.assistant.messages, model: store.assistant.model)
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else { throw MealOSError("The assistant could not connect.") }
-            guard (200..<300).contains(http.statusCode) else {
-                let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-                throw MealOSError(object?["error"] as? String ?? "The assistant could not connect (\(http.statusCode)). Try again.")
-            }
-            let (reply, draft, sources, questions) = try AssistantProtocol.response(data)
-            store.updateAssistant { $0.messages.append(AssistantMessage(role: "assistant", content: reply)); $0.draft = draft; $0.sources = sources; $0.questions = questions }
-        } catch { store.error = error.localizedDescription }
     }
 }
