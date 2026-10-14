@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use rand::{Rng, rand_core::UnwrapErr, rngs::SysRng};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::Error;
@@ -93,6 +93,27 @@ pub async fn challenge_nonce(pool: &PgPool, id: Uuid) -> Result<String, Error> {
     sqlx::query_scalar("SELECT nonce_hash FROM auth_challenges WHERE id=$1 AND consumed_at IS NULL AND expires_at>now()")
         .bind(id).fetch_optional(pool).await?.ok_or_else(Error::unauthorized)
 }
+
+struct PreparedTokens {
+    access_token: String,
+    refresh_token: String,
+    access_hash: String,
+    refresh_hash: String,
+}
+
+fn generate_token_pair() -> PreparedTokens {
+    let access_token = token("fwat_");
+    let refresh_token = token("fwrt_");
+    let access_hash = digest(&access_token);
+    let refresh_hash = digest(&refresh_token);
+    PreparedTokens {
+        access_token,
+        refresh_token,
+        access_hash,
+        refresh_hash,
+    }
+}
+
 // Called only after cryptographic Apple verification; consume and create session
 // in one transaction so concurrent retries cannot replay the same login.
 pub async fn finish_sign_in(
@@ -100,53 +121,89 @@ pub async fn finish_sign_in(
     challenge: Uuid,
     verified_subject: &str,
 ) -> Result<Tokens, Error> {
-    let mut tx = pool.begin().await?;
-    let consumed = sqlx::query("UPDATE auth_challenges SET consumed_at=now() WHERE id=$1 AND consumed_at IS NULL AND expires_at>now()")
-        .bind(challenge).execute(&mut *tx).await?;
-    if consumed.rows_affected() != 1 {
-        return Err(Error::unauthorized());
-    }
-    let user_id = sqlx::query_scalar("INSERT INTO users(apple_subject) VALUES ($1) ON CONFLICT(apple_subject) DO UPDATE SET apple_subject=EXCLUDED.apple_subject RETURNING id")
-        .bind(verified_subject).fetch_one(&mut *tx).await?;
-    let result = write_tokens(&mut tx, user_id, None).await?;
-    tx.commit().await?;
-    Ok(result)
-}
-async fn write_tokens(
-    tx: &mut Transaction<'_, Postgres>,
-    user_id: Uuid,
-    existing: Option<Uuid>,
-) -> Result<Tokens, Error> {
-    let access_token = token("fwat_");
-    let refresh_token = token("fwrt_");
-    let access_hash = digest(&access_token);
-    let refresh_hash = digest(&refresh_token);
-    let (access_expires_at, session_expires_at) = if let Some(id) = existing {
-        sqlx::query_as::<_,(DateTime<Utc>,DateTime<Utc>)>("UPDATE sessions SET access_hash=$2,refresh_hash=$3,access_expires_at=LEAST(now()+interval '15 minutes',expires_at) WHERE id=$1 RETURNING access_expires_at,expires_at")
-            .bind(id).bind(access_hash).bind(refresh_hash).fetch_one(&mut **tx).await?
-    } else {
-        sqlx::query_as::<_,(DateTime<Utc>,DateTime<Utc>)>("INSERT INTO sessions(user_id,access_hash,refresh_hash,access_expires_at,expires_at) VALUES ($1,$2,$3,now()+interval '15 minutes',now()+interval '30 days') RETURNING access_expires_at,expires_at")
-            .bind(user_id).bind(access_hash).bind(refresh_hash).fetch_one(&mut **tx).await?
-    };
+    let t = generate_token_pair();
+
+    // TODO: I am fairly sure the `expires_at > now()` check is just wrong, but I've preserved it
+    let row = sqlx::query!(
+        r#"
+WITH consumed AS (
+    UPDATE auth_challenges
+    SET consumed_at = now()
+    WHERE id = $1 AND consumed_at IS NULL AND expires_at > now()
+    RETURNING 1
+),
+ins_user AS (
+    INSERT INTO users (apple_subject)
+    SELECT $2 WHERE EXISTS (SELECT 1 FROM consumed)
+    ON CONFLICT (apple_subject) DO NOTHING
+    RETURNING id
+),
+target_user AS (
+    SELECT id FROM ins_user
+    UNION ALL
+    SELECT id FROM users
+    WHERE apple_subject=$2 AND EXISTS (SELECT 1 FROM consumed) AND NOT EXISTS(SELECT 1 FROM ins_user)
+)
+INSERT INTO sessions(user_id, access_hash, refresh_hash, access_expires_at, expires_at)
+SELECT id, $3, $4, now() + interval '15 minutes', now() + interval '30 days'
+FROM target_user
+RETURNING user_id, access_expires_at, expires_at
+"#,
+        challenge,
+        verified_subject,
+        &t.access_hash,
+        &t.refresh_hash,
+    )
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(Error::unauthorized)?;
+
     Ok(Tokens {
-        user: User { id: user_id },
+        user: User { id: row.user_id },
         token_type: "Bearer",
-        access_token,
-        refresh_token,
-        access_expires_at,
-        session_expires_at,
+        access_token: t.access_token,
+        refresh_token: t.refresh_token,
+        access_expires_at: row.access_expires_at,
+        session_expires_at: row.expires_at,
     })
 }
+
 pub async fn refresh(pool: &PgPool, refresh_token: &str) -> Result<Tokens, Error> {
     if !valid_token(refresh_token, "fwrt_") {
         return Err(Error::unauthorized());
     }
-    let mut tx = pool.begin().await?;
-    let (id,user_id) = sqlx::query_as::<_,(Uuid,Uuid)>("SELECT id,user_id FROM sessions WHERE refresh_hash=$1 AND revoked_at IS NULL AND expires_at>now() FOR UPDATE")
-        .bind(digest(refresh_token)).fetch_optional(&mut *tx).await?.ok_or_else(Error::unauthorized)?;
-    let result = write_tokens(&mut tx, user_id, Some(id)).await?;
-    tx.commit().await?;
-    Ok(result)
+
+    let old_refresh_hash = digest(refresh_token);
+    let t = generate_token_pair();
+
+    // TODO: I am fairly sure the `expires_at > now()` check is just wrong, but I've preserved it
+    let row = sqlx::query!(
+        r#"
+UPDATE sessions
+SET access_hash = $2,
+    refresh_hash = $3,
+    access_expires_at = LEAST(now() + interval '15 minutes', expires_at)
+WHERE refresh_hash = $1
+    AND revoked_at IS NULL
+    AND expires_at > now()
+RETURNING user_id, access_expires_at, expires_at
+"#,
+        old_refresh_hash,
+        &t.access_hash,
+        &t.refresh_hash,
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(Error::unauthorized)?;
+
+    Ok(Tokens {
+        user: User { id: row.user_id },
+        token_type: "Bearer",
+        access_token: t.access_token,
+        refresh_token: t.refresh_token,
+        access_expires_at: row.access_expires_at,
+        session_expires_at: row.expires_at,
+    })
 }
 pub async fn authenticate(pool: &PgPool, access_token: &str) -> Result<Identity, Error> {
     if !valid_token(access_token, "fwat_") {
