@@ -1,8 +1,6 @@
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use rand::rand_core::UnwrapErr;
-use rand::Rng;
-use rand::rngs::SysRng;
+use rand::{Rng, rand_core::UnwrapErr, rngs::SysRng};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
@@ -64,20 +62,31 @@ pub struct Identity {
 
 pub async fn challenge(pool: &PgPool) -> Result<Challenge, Error> {
     let nonce = token("");
-    let mut tx = pool.begin().await?;
-    sqlx::query("DELETE FROM auth_challenges WHERE expires_at < now()")
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("DELETE FROM sessions WHERE expires_at < now()")
-        .execute(&mut *tx)
-        .await?;
-    let (id, expires_at) = sqlx::query_as::<_,(Uuid,DateTime<Utc>)>("INSERT INTO auth_challenges(nonce_hash,expires_at) VALUES ($1,now()+interval '5 minutes') RETURNING id,expires_at")
-        .bind(digest(&nonce)).fetch_one(&mut *tx).await?;
-    tx.commit().await?;
+
+    // TODO: Cleanup should really be done in a background thread instead.
+    // 10k challenges in 4 minutes are only cleaned up if a challenge arrives 5 minutes after the first challenge
+    // DB garbage collection currently runs while initializing a new challenge
+    let challenge = sqlx::query!(
+        r#"
+WITH del_challenges AS (
+    DELETE FROM auth_challenges WHERE expires_at < now()
+),
+del_sessions AS (
+    DELETE FROM sessions WHERE expires_at < now()
+)
+INSERT INTO auth_challenges (nonce_hash, expires_at)
+VALUES ($1, now() + interval '5 minutes')
+RETURNING id, expires_at
+"#,
+        nonce
+    )
+    .fetch_one(pool)
+    .await?;
+
     Ok(Challenge {
-        challenge_id: id,
+        challenge_id: challenge.id,
+        expires_at: challenge.expires_at,
         nonce,
-        expires_at,
     })
 }
 pub async fn challenge_nonce(pool: &PgPool, id: Uuid) -> Result<String, Error> {
